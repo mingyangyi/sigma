@@ -300,8 +300,12 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
             for i in range(len(inputs.size()) - 1):
                 sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
 
+            sigma_this_batch_tmp = torch.zeros_like(sigma_this_batch)
+            sigma_this_batch_tmp.data.copy_(sigma_this_batch)
+            sigma_this_batch_tmp.requires_grad_(True)
+
             for i in range(batch_size):
-                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
+                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch_tmp[i]
 
             for i in range(len(inputs.size()) - 1):
                 sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
@@ -345,6 +349,11 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            for i in range(len(inputs.size()) - 1):
+                sigma_this_batch_tmp.grad.data = sigma_this_batch_tmp.grad.data.squeeze(1)
+
+            sigma_this_batch.grad.data.copy_(sigma_this_batch_tmp.grad.data)
             sigma_this_batch[indices_correct][indices].data -= lr_sigma * sigma_this_batch[indices_correct][indices].grad.data
             sigma_this_batch.grad.data.zero_()
 
