@@ -3,6 +3,7 @@ from __future__ import print_function
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.optim.lr_scheduler import MultiStepLR
 import torch.backends.cudnn as cudnn
 import time
@@ -13,7 +14,7 @@ import torchvision.transforms as transforms
 import numpy as np
 import random
 from torch.distributions.normal import Normal
-from rs.certify import certify
+# from rs.certify import certify
 
 import os
 import argparse
@@ -294,13 +295,18 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
             sigma_this_batch = sigma[batch_idx * batch_size: (batch_idx + 1) * batch_size]
             new_shape = [batch_size * gauss_num]
             new_shape.extend(inputs[0].shape)
-            inputs = inputs.repeat((1, gauss_num, 1, 1))
+            inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
             noise = torch.randn_like(inputs, device=device)
             for i in range(len(inputs.size()) - 1):
-                sigma_this_batch = sigma_this_batch.unsqueeze(1)
+                sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
 
-            noise *= sigma_this_batch
-            inputs, noise = inputs.view(new_shape), noise.view(new_shape)
+            for i in range(batch_size):
+                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
+
+            for i in range(len(inputs.size()) - 1):
+                sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
+
+            # inputs, noise = inputs.view(new_shape), noise.view(new_shape)
             noisy_inputs = inputs + noise
 
             outputs = model(noisy_inputs)
@@ -330,16 +336,16 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
                 robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
             out0, out1 = out0[indices], out1[indices]
             robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
-            robustness_loss = (robustness_loss * sigma_this_batch[indices]).sum() / 2
+            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct][indices]).sum() / 2
             rl_total += robustness_loss.item()
 
             # Final objective function
             loss = classification_loss + lbd * robustness_loss
-            loss /= input_size
+            loss /= batch_size
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            sigma_this_batch[indices].data -= lr_sigma * sigma_this_batch[indices].grad.data
+            sigma_this_batch[indices_correct][indices].data -= lr_sigma * sigma_this_batch[indices_correct][indices].grad.data
             sigma_this_batch.grad.data.zero_()
 
         cl_total /= data_size
