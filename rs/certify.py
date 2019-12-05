@@ -28,10 +28,10 @@ def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
 
   model.eval()
   if sigma_net is None:
-    smoothed_net = Smooth(model, num_classes,
+    smoothed_net = Smooth(model, None, num_classes,
                           sigma, device, mode, beta)
   else:
-    smoothed_net = Smooth(model, num_classes,
+    smoothed_net = Smooth(model, sigma_net, num_classes,
                           sigma, device, mode, beta)
 
   radius_hard = np.zeros((num_img,), dtype=np.float)
