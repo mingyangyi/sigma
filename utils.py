@@ -34,11 +34,11 @@ class Sigma_net(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.conv1(x))
-        out = F.relu(self.fc1(out))
+        out = F.relu(self.fc1(out.view(out.size()[0], -1)))
         out = F.relu(self.fc2(out))
         out = F.softmax(out, dim=1)
 
-        return out.max(1)
+        return 2 * out.max(1)
 
 
 def sigmanet():

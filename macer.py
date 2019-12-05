@@ -87,15 +87,16 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
 
             for batch_idx, (inputs, targets, sigma) in enumerate(trainloader):
                 inputs, targets = inputs.to(device), targets.to(device)
+                sigma_this_batch = sigma_net.forward(inputs)
                 batch_size = len(inputs)
                 data_size += targets.size(0)
 
                 new_shape = [batch_size * gauss_num]
                 new_shape.extend(inputs[0].shape)
                 inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
+                sigma_this_batch = sigma_this_batch.repeat((1, gauss_num, 1, 1)).view(new_shape)
                 noise = torch.randn_like(inputs, device=device)
 
-                sigma_this_batch = sigma_net.forward(inputs)
                 for i in range(len(inputs.size()) - 1):
                     sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
 
