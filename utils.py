@@ -41,7 +41,7 @@ class Sigma_net(nn.Module):
         return out.max(1)
 
 
-def sigma_net():
+def sigmanet():
     return Sigma_net()
 
 

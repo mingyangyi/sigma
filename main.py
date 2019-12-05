@@ -13,7 +13,7 @@ import pickle
 import torchvision.transforms as transforms
 import numpy as np
 import random
-from utils import sigma_net
+from utils import *
 from macer import macer_train
 # from rs.certify import certify
 
@@ -172,11 +172,11 @@ def main():
 
     if args.sigma_net == 'True':
         if device == 'cuda':
-            sigma_net = sigma_net().to(device)
+            sigma_net = sigmanet().to(device)
             sigma_net = torch.nn.DataParallel(sigma_net)
             cudnn.benchmark = True
         else:
-            sigma_net = sigma_net()
+            sigma_net = sigmanet()
     else:
         sigma_net = None
 
@@ -195,7 +195,7 @@ def main():
 
     if args.dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-        trainset = utils.create_set(trainset, sigma)
+        trainset = create_set(trainset, sigma)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
@@ -203,7 +203,7 @@ def main():
 
     elif args.dataset == 'cifar100':
         trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-        trainset = utils.create_set(trainset, sigma)
+        trainset = create_set(trainset, sigma)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
@@ -211,7 +211,7 @@ def main():
 
     elif args.dataset == 'svhn':
         trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-        trainset = utils.create_set(trainset, sigma)
+        trainset = create_set(trainset, sigma)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
@@ -219,7 +219,7 @@ def main():
 
     elif args.dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform_train)
-        trainset = utils.create_set(trainset, sigma)
+        trainset = create_set(trainset, sigma)
         trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform_test)
