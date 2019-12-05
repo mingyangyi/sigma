@@ -26,8 +26,8 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 noise = torch.randn_like(inputs, device=device)
 
                 sigma_this_batch = sigma.clone().detach().to(device)
-                for i in range(len(inputs.size()) - 1):
-                    sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
+                # for i in range(len(inputs.size()) - 1):
+                #     sigma_this_batch = sigma_this_batch.data.unsqueeze(1)
 
                 sigma_this_batch.requires_grad_(True)
 
@@ -66,7 +66,7 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                     robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
                 indices_correct = utils.cal_index(indices_correct, indices)
 
-                out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
+                out0, out1 = out0[indices], out1[indices, 1]
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
                 robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
                 rl_total += robustness_loss.item()
@@ -78,8 +78,8 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 loss.backward()
                 optimizer.step()
 
-                for i in range(len(inputs.size()) - 1):
-                    sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
+                # for i in range(len(inputs.size()) - 1):
+                #     sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
                 sigma[indices_correct] -= lr_sigma * sigma_this_batch.grad[indices_correct].cpu()
                 sigma_this_batch.grad.data.zero_()
                 sigma = torch.max(torch.zeros_like(sigma), sigma).detach()
@@ -101,7 +101,7 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 # sigma_this_batch = sigma_this_batch.view(batch_size, 1, 1, 1)
 
                 for i in range(batch_size):
-                    noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i].item()
+                    noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
 
                 # for i in range(len(inputs.size()) - 1):
                 #     sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
@@ -135,7 +135,7 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                     robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
                 indices_correct = utils.cal_index(indices_correct, indices)
 
-                out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
+                out0, out1 = out0[indices], out1[indices]
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
                 robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
                 rl_total += robustness_loss.item()

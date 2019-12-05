@@ -13,16 +13,16 @@ def cal_index(indices, subindices):
     indices_tmp = torch.zeros_like(indices)
     indices_tmp.data.copy_(indices)
     for i in range(len(indices)):
-        if indices[i] == 1:
-            if subindices[num] != 1:
+        if indices[i].item() == 1:
+            if subindices[num].item() != 1:
                 indices_tmp[i] = 0
-            elif subindices[num] != 1:
+            elif subindices[num].item() == 1:
                 indices_tmp[i] = 1
             num += 1
         else:
             continue
 
-        return indices_tmp
+    return indices_tmp
 
 
 class Sigma_net(nn.Module):
