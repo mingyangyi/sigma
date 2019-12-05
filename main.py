@@ -13,6 +13,7 @@ import pickle
 import torchvision.transforms as transforms
 import numpy as np
 import random
+import utils
 from torch.distributions.normal import Normal
 # from rs.certify import certify
 
@@ -40,7 +41,7 @@ parser.add_argument('--task', default='train',
 ##########################################################################
 parser.add_argument('--dataset', default='cifar10', type=str,
                     help='dataset')
-parser.add_argument('--epochs', default=100, type=int, metavar='N',
+parser.add_argument('--epochs', default=440, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--batch_size', default=128, type=int,
                     help='batch size')
@@ -155,50 +156,17 @@ def main():
     else:
         raise ValueError('No such dataset')
 
+    # data_size = 0
+    # for _, (inputs, targets) in enumerate(trainloader):
+    #     data_size += targets.size(0)
 
-    if args.dataset == 'cifar10':
-        trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
-
-        testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
-
-    elif args.dataset == 'cifar100':
-        trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
-
-        testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
-        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
-
-    elif args.dataset == 'svhn':
-        trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
-
-        testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
-        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
-
-    elif args.dataset == 'mnist':
-        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform_train)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
-
-        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform_test)
-        # testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
-    else:
-        raise ValueError('There is no such dataset')
-    num_classes = 10
-
+    sigma = args.sigma * torch.ones(50000)
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
-
-    data_size = 0
-    for _, (inputs, targets) in enumerate(trainloader):
-        data_size += targets.size(0)
-
-    sigma = args.sigma * torch.ones(data_size).to(device)
 
     if args.resume == 'True':
         # Load checkpoint.
@@ -211,7 +179,41 @@ def main():
                 sigma = checkpoint['sigma']
             scheduler.step(start_epoch)
 
-    sigma.requires_grad_(True)
+    if args.dataset == 'cifar10':
+        trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
+        trainset = utils.create_set(trainset, sigma)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
+        testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
+
+    elif args.dataset == 'cifar100':
+        trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
+        trainset = utils.create_set(trainset, sigma)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
+        testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
+        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+
+    elif args.dataset == 'svhn':
+        trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
+        trainset = utils.create_set(trainset, sigma)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
+        testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
+        # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+
+    elif args.dataset == 'mnist':
+        trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform_train)
+        trainset = utils.create_set(trainset, sigma)
+        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
+        testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform_test)
+        # testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    else:
+        raise ValueError('There is no such dataset')
+
+    num_classes = 10
     train_vector = []
 
     if args.task == 'train':
@@ -221,7 +223,7 @@ def main():
             print('create an optimizer with learning rate as:', lr)
             scheduler.step()
             model.train()
-            c_loss, r_loss, acc = macer_train(sigma, args.lam, args.gauss_num, args.beta, args.gamma, args.lr_sigma,
+            c_loss, r_loss, acc = macer_train(args.lam, args.gauss_num, args.beta, args.gamma, args.lr_sigma,
                                               num_classes, model, trainloader, optimizer, device)
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
@@ -257,7 +259,7 @@ def main():
             state = {
                 'model': model.state_dict(),
                 'epoch': epoch,
-                'sigma': sigma
+                'sigma': torch.tensor([i[2] for i in trainset])
             }
 
             if not os.path.isdir(save_path):
@@ -278,7 +280,7 @@ def main():
 
 
 # Training
-def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainloader, optimizer, device):
+def macer_train(lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainloader, optimizer, device):
     m = Normal(torch.tensor([0.0]).to(device),
                torch.tensor([1.0]).to(device))
     cl_total = 0.0
@@ -287,12 +289,11 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
     correct = 0
 
     if args.training_method == 'macer':
-        for batch_idx, (inputs, targets) in enumerate(trainloader):
-            inputs, targets = inputs.to(device), targets.to(device)
+        for batch_idx, (inputs, targets, sigma) in enumerate(trainloader):
+            inputs, targets, sigma_this_batch = inputs.to(device), targets.to(device), sigma.to(device)
             batch_size = len(inputs)
             data_size += targets.size(0)
 
-            sigma_this_batch = sigma[batch_idx * batch_size: (batch_idx + 1) * batch_size]
             new_shape = [batch_size * gauss_num]
             new_shape.extend(inputs[0].shape)
             inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
@@ -300,15 +301,15 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
             for i in range(len(inputs.size()) - 1):
                 sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
 
-            sigma_this_batch_tmp = torch.zeros_like(sigma_this_batch)
-            sigma_this_batch_tmp.data.copy_(sigma_this_batch)
-            sigma_this_batch_tmp.requires_grad_(True)
+            # sigma_this_batch_tmp = torch.zeros_like(sigma_this_batch)
+            # sigma_this_batch_tmp.data.copy_(sigma_this_batch)
+            sigma_this_batch.requires_grad_(True)
 
             for i in range(batch_size):
-                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch_tmp[i]
+                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
 
-            for i in range(len(inputs.size()) - 1):
-                sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
+            # for i in range(len(inputs.size()) - 1):
+            #     sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
 
             # inputs, noise = inputs.view(new_shape), noise.view(new_shape)
             noisy_inputs = inputs + noise
@@ -351,10 +352,9 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
             optimizer.step()
 
             for i in range(len(inputs.size()) - 1):
-                sigma_this_batch_tmp.grad.data = sigma_this_batch_tmp.grad.data.squeeze(1)
+                sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
 
-            sigma_this_batch.grad.data.copy_(sigma_this_batch_tmp.grad.data)
-            sigma_this_batch[indices_correct][indices].data -= lr_sigma * sigma_this_batch[indices_correct][indices].grad.data
+            sigma[indices_correct][indices].data -= lr_sigma * sigma_this_batch.grad[indices_correct][indices].cpu().data
             sigma_this_batch.grad.data.zero_()
 
         cl_total /= data_size
@@ -364,7 +364,7 @@ def macer_train(sigma, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model
         return cl_total, rl_total, acc
 
     else:
-        for batch_idx, (inputs, targets) in enumerate(trainloader):
+        for batch_idx, (inputs, targets, sigma) in enumerate(trainloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model.forward(inputs)
             loss = nn.CrossEntropyLoss(reduction='sum')(outputs, targets)
