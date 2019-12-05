@@ -13,8 +13,8 @@ import pickle
 import torchvision.transforms as transforms
 import numpy as np
 import random
-import utils
-from torch.distributions.normal import Normal
+from utils import sigma_net
+from macer import macer_train
 # from rs.certify import certify
 
 import os
@@ -63,6 +63,7 @@ parser.add_argument('--gauss_num', default=16, type=int,
                     help='Number of Gaussian samples per input')
 parser.add_argument('--sigma', default=0.25, type=float,
                     metavar='W', help='initial sigma for each data')
+parser.add_argument('--sigma_net', default='False', type=str, help='using sigma net or not')
 parser.add_argument('--lam', default=12.0, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--gamma', default=8.0, type=float, help='Hinge factor')
@@ -153,6 +154,7 @@ def main():
             # transforms.Normalize((0:wq.5),
             #                      (0.5)),
         ])
+
     else:
         raise ValueError('No such dataset')
 
@@ -168,6 +170,16 @@ def main():
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
 
+    if args.sigma_net == 'True':
+        if device == 'cuda':
+            sigma_net = sigma_net().to(device)
+            sigma_net = torch.nn.DataParallel(sigma_net)
+            cudnn.benchmark = True
+        else:
+            sigma_net = sigma_net()
+    else:
+        sigma_net = None
+
     if args.resume == 'True':
         # Load checkpoint.
         print('==> Resuming from checkpoint..')
@@ -177,6 +189,8 @@ def main():
             start_epoch = checkpoint['epoch'] + 1
             if checkpoint['sigma'] is not None:
                 sigma = checkpoint['sigma']
+            if checkpoint['sigma_net'] is not None:
+                sigma_net = checkpoint['sigma_net']
             scheduler.step(start_epoch)
 
     if args.dataset == 'cifar10':
@@ -223,8 +237,9 @@ def main():
             print('create an optimizer with learning rate as:', lr)
             scheduler.step()
             model.train()
-            c_loss, r_loss, acc = macer_train(args.lam, args.gauss_num, args.beta, args.gamma, args.lr_sigma,
-                                              num_classes, model, trainloader, optimizer, device)
+            c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.lam, args.gauss_num, args.beta,
+                                              args.gamma, args.lr_sigma, num_classes, model, trainloader, optimizer,
+                                              device)
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
@@ -234,7 +249,7 @@ def main():
                 print('===test(epoch={})==='.format(epoch))
                 t1 = time.time()
                 model.eval()
-                certify(model, device, testset, transform_test, num_classes,
+                certify(model, sigma_net, device, testset, transform_test, num_classes,
                         mode='hard', start_img=args.start_img, num_img=args.num_img,
                         sigma=args.sigma, beta=args.beta,
                         matfile=(None if save_path is None else os.path.join(save_path, '{}.mat'.format(epoch))))
@@ -259,7 +274,8 @@ def main():
             state = {
                 'model': model.state_dict(),
                 'epoch': epoch,
-                'sigma': torch.tensor([i[2] for i in trainset])
+                'sigma': torch.tensor([i[2] for i in trainset]),
+                'sigma_net': sigma_net.state_dict() if sigma_net is not None else None
             }
 
             if not os.path.isdir(save_path):
@@ -273,114 +289,10 @@ def main():
                 pickle.dump(train_vector, fp)
 
     else:
-        certify(model, device, testset, num_classes,
+        certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=args.start_img, num_img=args.num_img, skip=args.skip,
                 sigma=args.sigma, beta=args.beta,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.mat')))
-
-
-# Training
-def macer_train(lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainloader, optimizer, device):
-    m = Normal(torch.tensor([0.0]).to(device),
-               torch.tensor([1.0]).to(device))
-    cl_total = 0.0
-    rl_total = 0.0
-    data_size = 0
-    correct = 0
-
-    if args.training_method == 'macer':
-        for batch_idx, (inputs, targets, sigma) in enumerate(trainloader):
-            inputs, targets, sigma_this_batch = inputs.to(device), targets.to(device), sigma.to(device)
-            batch_size = len(inputs)
-            data_size += targets.size(0)
-
-            new_shape = [batch_size * gauss_num]
-            new_shape.extend(inputs[0].shape)
-            inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
-            noise = torch.randn_like(inputs, device=device)
-
-            for i in range(len(inputs.size()) - 1):
-                sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
-
-            sigma_this_batch.requires_grad_(True)
-
-            for i in range(batch_size):
-                noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
-
-            # for i in range(len(inputs.size()) - 1):
-            #     sigma_this_batch.data = sigma_this_batch.data.squeeze(1)
-
-            # inputs, noise = inputs.view(new_shape), noise.view(new_shape)
-            noisy_inputs = inputs + noise
-
-            outputs = model(noisy_inputs)
-            outputs = outputs.reshape((batch_size, gauss_num, num_classes))
-
-            # Classification loss
-            outputs_softmax = F.softmax(outputs, dim=2).mean(1)
-            outputs_logsoftmax = torch.log(outputs_softmax + 1e-10)  # avoid nan
-            classification_loss = F.nll_loss(outputs_logsoftmax, targets, reduction='sum')
-            cl_total += classification_loss.item()
-
-            # Robustness loss
-            beta_outputs = outputs * beta  # only apply beta to the robustness loss
-            beta_outputs_softmax = F.softmax(beta_outputs, dim=2).mean(1)
-            _, predicted = beta_outputs_softmax.max(1)
-            correct += predicted.eq(targets).sum().item()
-
-            top2 = torch.topk(beta_outputs_softmax, 2)
-            top2_score = top2[0]
-            top2_idx = top2[1]
-            indices_correct = (top2_idx[:, 0] == targets)  # G_theta
-
-            out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
-            robustness_loss = m.icdf(out1) - m.icdf(out0)
-            indices = ~torch.isnan(robustness_loss) & ~torch.isinf(
-                robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
-            indices_correct = utils.cal_index(indices_correct, indices)
-
-            out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
-            robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
-            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
-            rl_total += robustness_loss.item()
-
-            # Final objective function
-            loss = classification_loss + lbd * robustness_loss
-            loss /= batch_size
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            for i in range(len(inputs.size()) - 1):
-                sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
-            sigma[indices_correct] -= lr_sigma * sigma_this_batch.grad[indices_correct].cpu()
-            sigma_this_batch.grad.data.zero_()
-            sigma = torch.max(torch.zeros_like(sigma), sigma).detach()
-
-        cl_total /= data_size
-        rl_total /= data_size
-        acc = 100 * correct / data_size
-
-        return cl_total, rl_total, acc
-
-    else:
-        for batch_idx, (inputs, targets, sigma) in enumerate(trainloader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model.forward(inputs)
-            loss = nn.CrossEntropyLoss(reduction='sum')(outputs, targets)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-
-            cl_total += loss.item()
-            _, predicted= outputs.max(1)
-            data_size += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-
-        cl_total /= data_size
-        acc = 100 * correct / data_size
-
-        return cl_total, rl_total, acc
 
 
 def set_seed(seed):
