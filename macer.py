@@ -2,6 +2,8 @@ import torch
 import utils
 from torch.distributions.normal import Normal
 import torch.optim as optim
+import torch.nn.functional as F
+
 
 def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainloader, optimizer, device):
     m = Normal(torch.tensor([0.0]).to(device),
@@ -94,7 +96,7 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 new_shape = [batch_size * gauss_num]
                 new_shape.extend(inputs[0].shape)
                 inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
-                sigma_this_batch = sigma_this_batch.repeat((1, gauss_num, 1, 1)).view(new_shape)
+                sigma_this_batch = sigma_this_batch.unsqueeze(1).repeat((1, gauss_num)).view(batch_size * gauss_num)
                 noise = torch.randn_like(inputs, device=device)
 
                 for i in range(len(inputs.size()) - 1):
