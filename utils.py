@@ -26,8 +26,9 @@ def cal_index(indices, subindices):
 
 
 class Sigma_net(nn.Module):
-    def __init__(self):
+    def __init__(self, sigma):
         super(Sigma_net, self).__init__()
+        self.sigma = sigma
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
         self.fc1 = nn.Linear(16 * 32 * 32, 512)
         self.fc2 = nn.Linear(512, 2)
@@ -38,10 +39,10 @@ class Sigma_net(nn.Module):
         out = F.relu(self.fc2(out))
         out = F.softmax(out, dim=1)
 
-        return 2 * out.max(1)
+        return 2 * self.sigma * out.max(1)[0]
 
 
-def sigmanet():
-    return Sigma_net()
+def sigmanet(sigma):
+    return Sigma_net(sigma)
 
 

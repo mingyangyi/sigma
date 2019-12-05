@@ -172,11 +172,11 @@ def main():
 
     if args.sigma_net == 'True':
         if device == 'cuda':
-            sigma_net = sigmanet().to(device)
+            sigma_net = sigmanet(args.sigma).to(device)
             sigma_net = torch.nn.DataParallel(sigma_net)
             cudnn.benchmark = True
         else:
-            sigma_net = sigmanet()
+            sigma_net = sigmanet(args.sigma)
     else:
         sigma_net = None
 
