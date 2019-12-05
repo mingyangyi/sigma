@@ -26,8 +26,8 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 noise = torch.randn_like(inputs, device=device)
 
                 sigma_this_batch = sigma.clone().detach().to(device)
-                # for i in range(len(inputs.size()) - 1):
-                #     sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
+                for i in range(len(inputs.size()) - 1):
+                    sigma_this_batch.data = sigma_this_batch.data.unsqueeze(1)
 
                 sigma_this_batch.requires_grad_(True)
 
@@ -78,8 +78,8 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                 loss.backward()
                 optimizer.step()
 
-                # for i in range(len(inputs.size()) - 1):
-                #     sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
+                for i in range(len(inputs.size()) - 1):
+                    sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
                 sigma[indices_correct] -= lr_sigma * sigma_this_batch.grad[indices_correct].cpu()
                 sigma_this_batch.grad.data.zero_()
                 sigma = torch.max(torch.zeros_like(sigma), sigma).detach()
