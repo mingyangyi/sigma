@@ -320,8 +320,7 @@ def macer_train(lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, train
             # Classification loss
             outputs_softmax = F.softmax(outputs, dim=2).mean(1)
             outputs_logsoftmax = torch.log(outputs_softmax + 1e-10)  # avoid nan
-            classification_loss = F.nll_loss(
-                outputs_logsoftmax, targets, reduction='sum')
+            classification_loss = F.nll_loss(outputs_logsoftmax, targets, reduction='sum')
             cl_total += classification_loss.item()
 
             # Robustness loss
@@ -340,8 +339,10 @@ def macer_train(lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, train
             indices = ~torch.isnan(robustness_loss) & ~torch.isinf(
                 robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
             out0, out1 = out0[indices], out1[indices]
+
+            utils.cal_index(indices_correct, indices)
             robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
-            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct][indices]).sum() / 2
+            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
             rl_total += robustness_loss.item()
 
             # Final objective function
@@ -353,7 +354,6 @@ def macer_train(lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, train
 
             for i in range(len(inputs.size()) - 1):
                 sigma_this_batch.grad.data = sigma_this_batch.grad.data.squeeze(1)
-
             sigma[indices_correct][indices].data -= lr_sigma * sigma_this_batch.grad[indices_correct][indices].cpu().data
             sigma_this_batch.grad.data.zero_()
 
