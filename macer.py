@@ -66,7 +66,7 @@ def macer_train(method, sigma_net, lbd, gauss_num, beta, gamma, lr_sigma, num_cl
                     robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
                 indices_correct = utils.cal_index(indices_correct, indices)
 
-                out0, out1 = out0[indices], out1[indices, 1]
+                out0, out1 = out0[indices], out1[indices]
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
                 robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
                 rl_total += robustness_loss.item()

@@ -14,7 +14,7 @@ import numpy as np
 import random
 from utils import *
 from macer import macer_train
-# from rs.certify import certify
+from rs.certify import certify
 
 import os
 import argparse
@@ -73,7 +73,7 @@ def main():
     global args
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + '_' + args.training_method + '_' \
+    args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' \
                 + str(args.sigma) + '_' + str(args.lam)
     save_path = os.path.join(args.save_path, args.save)
     if not os.path.exists(save_path):
@@ -179,19 +179,6 @@ def main():
     else:
         sigma_net = None
 
-    if args.resume == 'True':
-        # Load checkpoint.
-        print('==> Resuming from checkpoint..')
-        if os.path.exists(save_path + '/ckpt.t7'):#, 'Error: no results directory found!'
-            checkpoint = torch.load(save_path + '/ckpt.t7')
-            model.load_state_dict(checkpoint['model'])
-            start_epoch = checkpoint['epoch'] + 1
-            if checkpoint['sigma'] is not None:
-                sigma = checkpoint['sigma']
-            if checkpoint['sigma_net'] is not None:
-                sigma_net = checkpoint['sigma_net']
-            scheduler.step(start_epoch)
-
     if args.dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
         trainset = create_set(trainset, sigma)
@@ -225,6 +212,21 @@ def main():
         # testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
     else:
         raise ValueError('There is no such dataset')
+
+    if args.resume == 'True':
+        # Load checkpoint.
+        print('==> Resuming from checkpoint..')
+        if os.path.exists(save_path + '/ckpt.t7'):#, 'Error: no results directory found!'
+            checkpoint = torch.load(save_path + '/ckpt.t7')
+            model.load_state_dict(checkpoint['model'])
+            start_epoch = checkpoint['epoch'] + 1
+            # if checkpoint['sigma'] is not None:
+            #     sigma = checkpoint['sigma']
+            if checkpoint['sigma_net'] is not None:
+                sigma_net.load_state_dict(checkpoint['sigma_net'])
+            if checkpoint['train_loader'] is not None:
+                trainloader = checkpoint['train_loader']
+            scheduler.step(start_epoch)
 
     num_classes = 10
     train_vector = []
@@ -275,6 +277,7 @@ def main():
                 'epoch': epoch,
                 'sigma': torch.tensor([i[2] for i in trainset]),
                 'sigma_net': sigma_net.state_dict() if sigma_net is not None else None
+                'train_loader': trainloader
             }
 
             if not os.path.isdir(save_path):
@@ -289,7 +292,7 @@ def main():
 
     else:
         certify(model, sigma_net, device, testset, num_classes,
-                mode='both', start_img=args.start_img, num_img=args.num_img, skip=args.skip,
+                mode='both', start_img=500, num_img=500, skip=1,
                 sigma=args.sigma, beta=args.beta,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.mat')))
 
