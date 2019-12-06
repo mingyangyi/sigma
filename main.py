@@ -161,7 +161,7 @@ def main():
     # for _, (inputs, targets) in enumerate(trainloader):
     #     data_size += targets.size(0)
 
-    sigma = args.sigma * torch.ones(50000)
+    sigma = args.sigma * torch.randn(50000)
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
@@ -182,7 +182,6 @@ def main():
     if args.dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
         trainset = create_set(trainset, sigma)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
@@ -190,7 +189,6 @@ def main():
     elif args.dataset == 'cifar100':
         trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
         trainset = create_set(trainset, sigma)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
@@ -198,7 +196,6 @@ def main():
     elif args.dataset == 'svhn':
         trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
         trainset = create_set(trainset, sigma)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
@@ -206,7 +203,6 @@ def main():
     elif args.dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform_train)
         trainset = create_set(trainset, sigma)
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
         testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
@@ -220,14 +216,15 @@ def main():
             checkpoint = torch.load(save_path + '/ckpt.t7')
             model.load_state_dict(checkpoint['model'])
             start_epoch = checkpoint['epoch'] + 1
-            # if checkpoint['sigma'] is not None:
-            #     sigma = checkpoint['sigma']
+            if checkpoint['sigma'] is not None:
+                sigma = checkpoint['sigma']
             if checkpoint['sigma_net'] is not None:
                 sigma_net.load_state_dict(checkpoint['sigma_net'])
-            if checkpoint['train_loader'] is not None:
-                trainloader = checkpoint['train_loader']
+            if checkpoint['trainset'] is not None:
+                trainset = checkpoint['trainset']
             scheduler.step(start_epoch)
 
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     num_classes = 10
     train_vector = []
 
@@ -241,6 +238,11 @@ def main():
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.lam, args.gauss_num, args.beta,
                                               args.gamma, args.lr_sigma, num_classes, model, trainloader, optimizer,
                                               device)
+            # c_loss, r_loss, acc = 0.0, 0.0, 0.0
+            # for _, (inputs, tragets, sigma) in enumerate(trainloader):
+            #     if _ == 0:
+            #         print(sigma[0])
+            # trainset[0][2] = trainset[0][2] + 1
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
@@ -276,8 +278,8 @@ def main():
                 'model': model.state_dict(),
                 'epoch': epoch,
                 'sigma': torch.tensor([i[2] for i in trainset]),
-                'sigma_net': sigma_net.state_dict() if sigma_net is not None else None
-                'train_loader': trainloader
+                'sigma_net': sigma_net.state_dict() if sigma_net is not None else None,
+                'trainset': trainset
             }
 
             if not os.path.isdir(save_path):
