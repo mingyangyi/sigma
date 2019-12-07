@@ -108,7 +108,7 @@ class Smooth(object):
 
         batch = x.repeat((this_batch_size, 1, 1, 1))
         if self.sigma_net is not None:
-          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch)
+          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch).view(this_batch_size, 1, 1, 1)
         else:
           noise = torch.randn_like(batch, device=self.device) * self.sigma
         predictions = self.base_classifier(batch + noise)
