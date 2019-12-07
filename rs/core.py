@@ -58,14 +58,14 @@ class Smooth(object):
         c_hard = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_hard = self.sigma_net(x) * norm.ppf(pa_hard)
+          r_hard = self.sigma_net(x.unsqueeze(0)) * norm.ppf(pa_hard)
         else:
           r_hard = self.sigma * norm.ppf(pa_hard)
       if pa_soft < 0.5:
         c_soft = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_soft = self.sigma_net(x) * norm.ppf(pa_soft)
+          r_soft = self.sigma_net(x.unsqueeze(0)) * norm.ppf(pa_soft)
         else:
           r_soft = self.sigma * norm.ppf(pa_soft)
       return c_hard, r_hard, c_soft, r_soft
@@ -83,7 +83,7 @@ class Smooth(object):
         return Smooth.ABSTAIN, 0.0
       else:
         if self.sigma_net is not None:
-          radius = self.sigma_net(x) * norm.ppf(pABar)
+          radius = self.sigma_net(x.unsqueeze(0)) * norm.ppf(pABar)
         else:
           radius = self.sigma * norm.ppf(pABar)
         return cAHat, radius
@@ -108,7 +108,7 @@ class Smooth(object):
 
         batch = x.repeat((this_batch_size, 1, 1, 1))
         if self.sigma_net is not None:
-          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(x)
+          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch)
         else:
           noise = torch.randn_like(batch, device=self.device) * self.sigma
         predictions = self.base_classifier(batch + noise)

@@ -8,6 +8,21 @@ def create_set(trainset, sigma):
     return set_return
 
 
+def list_to_tensor(trainset):
+    inputs = torch.stack([trainset[i][0] for i in range(len(trainset))], 0)
+    targets = torch.stack([torch.tensor(trainset[i][1]) for i in range(len(trainset))], 0)
+    sigma = torch.stack([trainset[i][2] for i in range(len(trainset))], 0)
+
+    return [inputs, targets, sigma]
+
+
+def gen_index(index, length):
+    index_tmp = [1 if i in index else 0 for i in range(length)]
+    index_tmp = torch.tensor(index_tmp, dtype=torch.uint8)
+
+    return index_tmp
+
+
 def cal_index(indices, subindices):
     num = 0
     indices_tmp = torch.zeros_like(indices)
