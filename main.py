@@ -96,7 +96,7 @@ def main():
         f.writelines(str(args) + '\n')
 
     # best_acc = 0  # best test accuracy
-    start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+    start_epoch = 400  # start from epoch 0 or last checkpoint epoch
 
     num_parameters = sum([l.nelement() for l in model.parameters()])
     print("number of parameters: {}".format(num_parameters))

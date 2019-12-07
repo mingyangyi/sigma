@@ -18,7 +18,7 @@ def list_to_tensor(trainset):
 
 def gen_index(index, length):
     index_tmp = [1 if i in index else 0 for i in range(length)]
-    index_tmp = torch.tensor(index_tmp, dtype=torch.uint8)
+    index_tmp = torch.tensor(index_tmp, dtype=torch.bool)
 
     return index_tmp
 
