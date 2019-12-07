@@ -19,7 +19,7 @@ def list_to_tensor(trainset):
 def gen_index(index, length):
     index_tmp = [0 for i in range(length)]
     for i in index:
-        index_tmp[i] = 0
+        index_tmp[i] = 1
     index_tmp = torch.tensor(index_tmp, dtype=torch.bool)
 
     return index_tmp
