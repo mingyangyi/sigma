@@ -66,17 +66,20 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             indices_correct = (top2_idx[:, 0] == targets)  # G_theta
 
             out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
-            robustness_loss = m.icdf(out1) - m.icdf(out0)
-            indices = ~torch.isnan(robustness_loss) & ~torch.isinf(
-                robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
-            indices_correct = utils.cal_index(indices_correct, indices)
 
-            out0, out1 = out0[indices], out1[indices]
             if logsub is 'True':
-                robustness_loss = out0 * torch.log(out1 + 1e-10) + gamma
+                robustness_loss = out0 * torch.log(out1 + 1.0)
+                robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / \
+                                  robustness_loss.size()[0].item() * batch_size
             else:
+                robustness_loss = m.icdf(out1) - m.icdf(out0)
+                indices = ~torch.isnan(robustness_loss) & ~torch.isinf(
+                    robustness_loss) & (torch.abs(robustness_loss) <= gamma)  # hinge
+                indices_correct = utils.cal_index(indices_correct, indices)
+                out0, out1 = out0[indices], out1[indices]
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
-            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
+                robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
+
             rl_total += robustness_loss.item()
 
             # Final objective function
