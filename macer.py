@@ -73,7 +73,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
             out0, out1 = out0[indices], out1[indices]
             if logsub is 'True':
-                robustness_loss = out0 * torch.log(out1 + 1e-10)
+                robustness_loss = out0 * torch.log(out1 + 1e-10) + gamma
             else:
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
             robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / 2
@@ -93,7 +93,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 sigma_this_batch.requires_grad_(False)
                 sigma_this_batch[indices_correct] -= lr_sigma * sigma_this_batch.grad[indices_correct]
                 sigma_this_batch.grad.data.zero_()
-                sigma = torch.max(torch.zeros_like(sigma_this_batch), sigma_this_batch.detach())
+                sigma = torch.max(1e-8 * torch.ones_like(sigma_this_batch), sigma_this_batch.detach())
                 index = utils.gen_index(index, len(sigma_total))
                 sigma_total[index] = sigma.cpu()
 

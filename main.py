@@ -32,7 +32,7 @@ parser.add_argument('--model', '-a', metavar='MODEL', default='resnet',
                     help='model architecture: ' +
                     ' | '.join(model_names) +
                     ' (default: alexnet)')
-parser.add_argument('--depth', default=20, type=int,
+parser.add_argument('--depth', default=110, type=int,
                     help='depth for resnet')
 parser.add_argument('--save_path', type=str, default='./results')
 parser.add_argument('--task', default='train',
@@ -40,9 +40,9 @@ parser.add_argument('--task', default='train',
 ##########################################################################
 parser.add_argument('--dataset', default='cifar10', type=str,
                     help='dataset')
-parser.add_argument('--epochs', default=440, type=int, metavar='N',
+parser.add_argument('--epochs', default=450, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--batch_size', default=32, type=int,
+parser.add_argument('--batch_size', default=128, type=int,
                     help='batch size')
 parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
 parser.add_argument('--lr_decay_ratio', default=0.1, type=float,
@@ -88,7 +88,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        # model = torch.nn.DataParallel(model)
+        model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     print("created model with configuration: %s", model_config)
@@ -173,7 +173,7 @@ def main():
     if args.sigma_net == 'True':
         if device == 'cuda':
             sigma_net = sigmanet(args.sigma).to(device)
-            # sigma_net = torch.nn.DataParallel(sigma_net)
+            sigma_net = torch.nn.DataParallel(sigma_net)
             cudnn.benchmark = True
         else:
             sigma_net = sigmanet(args.sigma)

@@ -21,7 +21,7 @@ def gen_index(index, length):
     index_tmp = [0 for i in range(length)]
     for i in index:
         index_tmp[i] = 1
-    index_tmp = torch.tensor(index_tmp, dtype=torch.bool)
+    index_tmp = torch.tensor(index_tmp, dtype=torch.uint8)
 
     return index_tmp
 
@@ -138,9 +138,10 @@ class ResNet(nn.Module):
     def forward(self, x):
         x = self.feats(x)
         x = x.view(x.size(0), -1)
-        x = self.sigma * self.fc(x)
+        x = self.fc(x)
+        x = 10 * self.sigma * F.softmax(x, dim=1).max(1)[0]
 
-        return x.max(1)[0]
+        return x
 
 
 class ResNet_cifar10(ResNet):

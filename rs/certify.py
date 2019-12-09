@@ -90,31 +90,54 @@ def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
           if radius >= grid[j]:
             cnt_grid_hard[j + 1] += 1
 
-  print('===Certify Summary===')
-  print('Total Image Number: {}'.format(num_img))
-  if mode == 'both':
-    print('===Hard certify===')
-    print('Radius: 0.0  Number: {}  Acc: {}'.format(
-        cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100))
-    for j in range(num_grid):
-      print('Radius: {}  Number: {}  Acc: {}'.format(
-          grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100))
-    print('ACR: {}'.format(s_hard / num_img))
-    print('===Soft certify===')
-    print('Radius: 0.0  Number: {}  Acc: {}'.format(
-        cnt_grid_soft[0], cnt_grid_soft[0] / num_img * 100))
-    for j in range(num_grid):
-      print('Radius: {}  Number: {}  Acc: {}'.format(
-          grid[j], cnt_grid_soft[j + 1], cnt_grid_soft[j + 1] / num_img * 100))
-    print('ACR: {}'.format(s_soft / num_img))
-    if matfile is not None:
-      sio.savemat(matfile, {'hard': radius_hard, 'soft': radius_soft})
-  else:
-    print('Radius: 0.0  Number: {}  Acc: {}'.format(
-        cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100))
-    for j in range(num_grid):
-      print('Radius: {}  Number: {}  Acc: {}'.format(
-          grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100))
-    print('ACR: {}'.format(s_hard / num_img))
-    if matfile is not None:
-      sio.savemat(matfile, {mode: radius_hard})
+  with open(matfile, 'a') as f:
+    print('===Certify Summary===')
+    f.writelines('===Certify Summary===' + '\n')
+    print('Total Image Number: {}'.format(num_img))
+    f.writelines('Total Image Number: {}'.format(num_img) + '\n')
+    if mode == 'both':
+      print('===Hard certify===')
+      f.writelines('===Hard certify===' + '\n')
+      print('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100))
+      f.writelines('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100) + '\n')
+      for j in range(num_grid):
+        print('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100))
+        f.writelines('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100) + '\n')
+      print('ACR: {}'.format(s_hard / num_img))
+      f.writelines('ACR: {}'.format(s_hard / num_img) + '\n')
+      print('===Soft certify===')
+      f.writelines('===Soft certify===' + '\n')
+      print('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_soft[0], cnt_grid_soft[0] / num_img * 100))
+      f.writelines('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_soft[0], cnt_grid_soft[0] / num_img * 100) + '\n')
+      for j in range(num_grid):
+        print('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_soft[j + 1], cnt_grid_soft[j + 1] / num_img * 100))
+        f.writelines('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_soft[j + 1], cnt_grid_soft[j + 1] / num_img * 100) + '\n')
+      print('ACR: {}'.format(s_soft / num_img))
+      f.writelines('ACR: {}'.format(s_soft / num_img) + '\n')
+      # if matfile is not None:
+      f.writelines('hard: {}'.format(radius_hard) + '\n')
+      f.writelines('soft: {}'.format(radius_soft) + '\n')
+      # sio.savemat(matfile, {'hard': radius_hard, 'soft': radius_soft})
+    else:
+      print('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100))
+      f.writelines('Radius: 0.0  Number: {}  Acc: {}'.format(
+          cnt_grid_hard[0], cnt_grid_hard[0] / num_img * 100) + '\n')
+      for j in range(num_grid):
+        print('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100))
+        f.writelines('Radius: {}  Number: {}  Acc: {}'.format(
+            grid[j], cnt_grid_hard[j + 1], cnt_grid_hard[j + 1] / num_img * 100) + '\n')
+      print('ACR: {}'.format(s_hard / num_img))
+      f.writelines('ACR: {}'.format(s_hard / num_img) + '\n')
+      f.writelines('{}: {}'.format(mode, radius_hard) + '\n')
+      # if matfile is not None:
+        # sio.savemat(matfile, {mode: radius_hard})
