@@ -63,6 +63,7 @@ parser.add_argument('--gauss_num', default=16, type=int,
 parser.add_argument('--sigma', default=0.25, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--sigma_net', default='False', type=str, help='using sigma net or not')
+parser.add_argument('--logsub', default='False', type=str, help='using log to substitute or not')
 parser.add_argument('--lam', default=12.0, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--gamma', default=8.0, type=float, help='Hinge factor')
@@ -239,14 +240,14 @@ def main():
             print('create an optimizer with learning rate as:', lr)
             scheduler.step()
             model.train()
-            c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.lam, args.gauss_num, args.beta,
+            c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, args.lam, args.gauss_num, args.beta,
                                               args.gamma, args.lr_sigma, num_classes, model, trainset, batch_sampler,
                                               optimizer, device)
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
-            if epoch % 20 == 0 and epoch >= 200:
+            if epoch % 50 == 0 and epoch >= 200:
                 # Certify test
                 print('===test(epoch={})==='.format(epoch))
                 t1 = time.time()

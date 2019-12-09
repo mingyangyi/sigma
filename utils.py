@@ -46,17 +46,21 @@ class Sigma_net(nn.Module):
     def __init__(self, sigma):
         super(Sigma_net, self).__init__()
         self.sigma = sigma
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=False)
-        self.fc1 = nn.Linear(16 * 32 * 32, 512)
-        self.fc2 = nn.Linear(512, 2)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, bias=True)
+        self.fc1 = nn.Linear(16 * 32 * 32, 512, bias=True)
+        self.fc2 = nn.Linear(512, 512, bias=True)
+        self.fc3 = nn.Linear(512, 512, bias=True)
+        self.fc4 = nn.Linear(512, 1, bias=True)
 
     def forward(self, x):
         out = F.relu(self.conv1(x))
         out = F.relu(self.fc1(out.view(out.size()[0], -1)))
         out = F.relu(self.fc2(out))
-        out = F.softmax(out, dim=1)
+        out = F.relu(self.fc3(out))
+        out = self.fc4(out)
+        out = torch.sigmoid(out) * self.sigma * 2
 
-        return 2 * self.sigma * out.max(1)[0]
+        return out
 
 
 def sigmanet(sigma):
