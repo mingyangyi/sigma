@@ -82,8 +82,8 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             else:
                 robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
 
-            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / \
-                                  robustness_loss.size()[0].item() * batch_size
+            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum()# / \
+                                 # robustness_loss.size()[0] * batch_size
 
             rl_total += robustness_loss.item()
 
