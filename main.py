@@ -75,7 +75,7 @@ def main():
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' \
-                + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma)
+                + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + args.logsub
     save_path = os.path.join(args.save_path, args.save)
     if not os.path.exists(save_path):
         os.makedirs(save_path)

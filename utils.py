@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from moodels import *
 
 
 def create_set(trainset, sigma):
@@ -64,6 +65,7 @@ class Sigma_net(nn.Module):
 
 
 def sigmanet(sigma):
-    return Sigma_net(sigma)
+    return 10 * sigma * resnet.ResNet_cifar10(dataset='cifar10', depth=8)
+    # return Sigma_net(sigma)
 
 

@@ -23,7 +23,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
         for batch_idx, index in enumerate(batch_sampler):
             inputs, targets = inputs_total.index_select(0, torch.tensor(index)).to(device), \
-                                     targets_total.index(0, torch.tensor(index)).to(device)
+                              targets_total.index_select(0, torch.tensor(index)).to(device)
 
             if sigma_net is None:
                 sigma_this_batch = sigma_total.index_select(0, torch.tensor(index)).to(device)
@@ -90,7 +90,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 optimizer_sigma.step()
                 optimizer_sigma.zero_grad()
             else:
-                sigma_this_batch[indices_correct] -= lr_sigma * sigma_this_batch.grad[indices_correct]
+                sigma_this_batch[indices_correct].data.add_(-lr_sigma, sigma_this_batch.grad[indices_correct].data)
                 sigma_this_batch.grad.data.zero_()
                 sigma = torch.max(torch.zeros_like(sigma_this_batch), sigma_this_batch).detach()
                 index = utils.gen_index(index, len(sigma_total))
