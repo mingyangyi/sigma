@@ -88,7 +88,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     print("created model with configuration: %s", model_config)
@@ -173,7 +173,7 @@ def main():
     if args.sigma_net == 'True':
         if device == 'cuda':
             sigma_net = sigmanet(args.sigma).to(device)
-            sigma_net = torch.nn.DataParallel(sigma_net)
+            # sigma_net = torch.nn.DataParallel(sigma_net)
             cudnn.benchmark = True
         else:
             sigma_net = sigmanet(args.sigma)
