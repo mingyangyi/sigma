@@ -55,7 +55,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             cl_total += classification_loss.item()
 
             # Robustness loss
-            beta_outputs = outputs * beta  # only apply beta to the robustness loss
+            beta_outputs = outputs# * beta  # only apply beta to the robustness loss
             beta_outputs_softmax = F.softmax(beta_outputs, dim=2).mean(1)
             _, predicted = beta_outputs_softmax.max(1)
             correct += predicted.eq(targets).sum().item()
@@ -67,7 +67,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
             out0, out1 = top2_score[indices_correct, 0], top2_score[indices_correct, 1]
 
-            if logsub is 'True':
+            if logsub == 'True':
                 robustness_loss = out0 * torch.log(out1)
             else:
                 robustness_loss = m.icdf(out1) - m.icdf(out0)
@@ -77,18 +77,18 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             indices_correct = utils.cal_index(indices_correct, indices)
             out0, out1 = out0[indices], out1[indices]
 
-            if logsub is 'True':
-                robustness_loss = gamma - out0 * torch.log(out1)
+            if logsub == 'True':
+                robustness_loss = gamma + out0 * torch.log(out1)
             else:
-                robustness_loss = m.icdf(out1) - m.icdf(out0) + gamma
+                robustness_loss = m.icdf(out0) - m.icdf(out1)# + gamma
 
-            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum()# / \
-                                 # robustness_loss.size()[0] * batch_size
+            robustness_loss = (robustness_loss * sigma_this_batch[indices_correct]).sum() / \
+                                  robustness_loss.size()[0] * batch_size
 
             rl_total += robustness_loss.item()
 
             # Final objective function
-            loss = classification_loss + lbd * robustness_loss
+            loss = classification_loss - lbd * robustness_loss
             loss /= batch_size
             loss.backward()
             optimizer.step()

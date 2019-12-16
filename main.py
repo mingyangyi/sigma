@@ -40,7 +40,7 @@ parser.add_argument('--task', default='train',
 ##########################################################################
 parser.add_argument('--dataset', default='cifar10', type=str,
                     help='dataset')
-parser.add_argument('--epochs', default=450, type=int, metavar='N',
+parser.add_argument('--epochs', default=150, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--batch_size', default=128, type=int,
                     help='batch size')
@@ -168,7 +168,7 @@ def main():
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-        scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
+        scheduler = MultiStepLR(optimizer, milestones=[50, 100], gamma=args.lr_decay_ratio)
 
     if args.sigma_net == 'True':
         if device == 'cuda':
@@ -247,7 +247,7 @@ def main():
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
-            if epoch % 50 == 0 and epoch >= 200:
+            if epoch % 50 == 0 and epoch >= 50:
                 # Certify test
                 print('===test(epoch={})==='.format(epoch))
                 t1 = time.time()
@@ -255,7 +255,7 @@ def main():
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
                         sigma=args.sigma, beta=args.beta,
-                        matfile=(None if save_path is None else os.path.join(save_path, '{}.mat'.format(epoch))))
+                        matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
 
@@ -296,7 +296,7 @@ def main():
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
                 sigma=args.sigma, beta=args.beta,
-                matfile=(None if save_path is None else os.path.join(save_path, 'test.mat')))
+                matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
 
 
 def set_seed(seed):
