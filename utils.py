@@ -139,7 +139,7 @@ class ResNet(nn.Module):
         x = self.feats(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        x = 10 * self.sigma * F.softmax(x, dim=1).max(1)[0]
+        x = 2 * self.sigma * F.softmax(x, dim=2).max(1)[0]
 
         return x
 
@@ -173,7 +173,7 @@ class ResNet_cifar10(ResNet):
 
 
 def sigmanet(sigma):
-    return ResNet_cifar10(sigma=sigma, num_classes=10, block=BasicBlock, depth=20)
+    return ResNet_cifar10(sigma=sigma, num_classes=2, block=BasicBlock, depth=20)
     # return Sigma_net(sigma)
 
 

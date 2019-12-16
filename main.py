@@ -42,7 +42,7 @@ parser.add_argument('--dataset', default='cifar10', type=str,
                     help='dataset')
 parser.add_argument('--epochs', default=150, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--batch_size', default=128, type=int,
+parser.add_argument('--batch_size', default=64, type=int,
                     help='batch size')
 parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
 parser.add_argument('--lr_decay_ratio', default=0.1, type=float,
