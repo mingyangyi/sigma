@@ -139,7 +139,7 @@ class ResNet(nn.Module):
         x = self.feats(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        x = 2 * self.sigma * F.softmax(x, dim=2).max(1)[0]
+        x = 2 * self.sigma * F.softmax(x, dim=1).max(1)[0]
 
         return x
 
