@@ -14,7 +14,7 @@ import numpy as np
 import random
 from utils import *
 from macer import macer_train
-from rs.certify import certify
+# from rs.certify import certify
 
 import os
 import argparse
@@ -74,8 +74,8 @@ def main():
     global args
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' \
-                + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + args.logsub
+    args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' + \
+                str(args.lr) + '_'  + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + str(args.beta) + '_' + args.logsub
     save_path = os.path.join(args.save_path, args.save)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -88,8 +88,8 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
+        # model = torch.nn.DataParallel(model)
+        # cudnn.benchmark = True
 
     print("created model with configuration: %s", model_config)
     print("run arguments: %s", args)
@@ -182,29 +182,21 @@ def main():
 
     if args.dataset == 'cifar10':
         trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
-        trainset = create_set(trainset, sigma)
-
         testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
 
     elif args.dataset == 'cifar100':
         trainset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform=transform_train)
-        trainset = create_set(trainset, sigma)
-
         testset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 
     elif args.dataset == 'svhn':
         trainset = torchvision.datasets.SVHN(root='./data', split='train', download=True, transform=transform_train)
-        trainset = create_set(trainset, sigma)
-
         testset = torchvision.datasets.SVHN(root='./data', split='test', download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 
     elif args.dataset == 'mnist':
         trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform_train)
-        trainset = create_set(trainset, sigma)
-
         testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform_test)
         # testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
     else:
@@ -212,7 +204,6 @@ def main():
 
     random_sampler = torch.utils.data.RandomSampler(trainset, replacement=False)
     batch_sampler = torch.utils.data.BatchSampler(sampler=random_sampler, batch_size=args.batch_size, drop_last=False)
-    trainset = list_to_tensor(trainset)
 
     if args.resume == 'True':
         # Load checkpoint.
@@ -225,9 +216,12 @@ def main():
                 sigma = checkpoint['sigma']
             if checkpoint['sigma_net'] is not None:
                 sigma_net.load_state_dict(checkpoint['sigma_net'])
-            if checkpoint['trainset'] is not None:
-                trainset = checkpoint['trainset']
+            # if checkpoint['trainset'] is not None:
+            #     trainset = checkpoint['trainset']
             scheduler.step(start_epoch)
+
+    trainset = create_set(trainset, sigma)
+    trainset = list_to_tensor(trainset)
 
     # trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     num_classes = 10
@@ -279,7 +273,7 @@ def main():
                 'epoch': epoch,
                 'sigma': torch.tensor([i for i in trainset[2]]),
                 'sigma_net': sigma_net.state_dict() if sigma_net is not None else None,
-                'trainset': trainset
+                # 'trainset': trainset
             }
 
             if not os.path.isdir(save_path):
