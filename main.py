@@ -14,7 +14,7 @@ import numpy as np
 import random
 from utils import *
 from macer import macer_train
-# from rs.certify import certify
+from rs.certify import certify
 
 import os
 import argparse
@@ -88,8 +88,8 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        # model = torch.nn.DataParallel(model)
-        # cudnn.benchmark = True
+        model = torch.nn.DataParallel(model)
+        cudnn.benchmark = True
 
     print("created model with configuration: %s", model_config)
     print("run arguments: %s", args)

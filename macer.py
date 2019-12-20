@@ -95,10 +95,11 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 robustness_loss_correct = torch.clamp(m.icdf(out0_correct) - m.icdf(out1_correct), gamma)  # + gamma
                 robustness_loss_wrong = torch.clamp(m.icdf(out0_wrong) - m.icdf(out1_wrong), gamma)
 
-                robustness_loss = (robustness_loss_correct * sigma_this_batch[indices_correct]).sum() / 2 - (
-                        robustness_loss_wrong * sigma_this_batch[indices_wrong]).sum() / 2
-
-                robustness_loss = torch.log(1 + torch.exp(robustness_loss))
+                robustness_loss_correct = torch.log(
+                    1 + torch.exp(robustness_loss_correct * sigma_this_batch[indices_correct] / 2)).sum()
+                robustness_loss_wrong = torch.log(
+                    1 + torch.exp(robustness_loss_wrong * sigma_this_batch[indices_wrong] / 2)).sum()
+                robustness_loss = robustness_loss_correct + robustness_loss_wrong
 
             else:
                 robustness_loss_correct = torch.clamp(m.icdf(out0_correct) - m.icdf(out1_correct), gamma)  # + gamma
