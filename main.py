@@ -40,7 +40,7 @@ parser.add_argument('--task', default='train',
 ##########################################################################
 parser.add_argument('--dataset', default='cifar10', type=str,
                     help='dataset')
-parser.add_argument('--epochs', default=150, type=int, metavar='N',
+parser.add_argument('--epochs', default=151, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--batch_size', default=64, type=int,
                     help='batch size')
