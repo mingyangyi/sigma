@@ -14,7 +14,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
     data_size = 0
     correct = 0
     (inputs_total, targets_total, sigma_total) = trainset
-
+    sigma_mean = sigma_total.mean()
     if method == 'macer':
         if sigma_net is not None:
             optimizer_sigma = optim.SGD(sigma_net.parameters(), lr=lr_sigma, weight_decay=5e-4)
@@ -164,6 +164,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 # print(sigma_this_batch[indices_correct])
                 sigma_total[index] = sigma.cpu()
 
+        sigma_total = sigma_total - sigma_total.mean() + sigma_mean()
         cl_total /= data_size
         rl_total /= data_size
         acc = 100 * correct / data_size

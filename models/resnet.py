@@ -121,15 +121,6 @@ class ResNet(nn.Module):
 
         return x
 
-    def forward_in_exp(self, x):
-        sum = 0
-        for _ in range(20):
-            out = self.feats(x)
-            out = out.view(out.size(0), -1)
-            sum += self.fc(out)
-
-        return sum
-
 
 class ResNet_imagenet(ResNet):
 
