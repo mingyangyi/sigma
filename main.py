@@ -202,6 +202,7 @@ def main():
     else:
         raise ValueError('There is no such dataset')
 
+    trainset = create_set(trainset, sigma)
     random_sampler = torch.utils.data.RandomSampler(trainset, replacement=False)
     batch_sampler = torch.utils.data.BatchSampler(sampler=random_sampler, batch_size=args.batch_size, drop_last=False)
 
@@ -220,7 +221,6 @@ def main():
             #     trainset = checkpoint['trainset']
             scheduler.step(start_epoch)
 
-    trainset = create_set(trainset, sigma)
     trainset = list_to_tensor(trainset)
 
     # trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=1)

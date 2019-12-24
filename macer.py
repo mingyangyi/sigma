@@ -108,7 +108,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 robustness_loss = (robustness_loss_correct * sigma_this_batch[indices_correct]).sum() / 2# - (
                            # robustness_loss_wrong * sigma_this_batch[indices_wrong]).sum() / 2  #
 
-            rl_total += robustness_loss.item()
+            rl_total += lbd * robustness_loss.item()
 
             # Final objective function
             loss = classification_loss - lbd * robustness_loss
@@ -164,12 +164,12 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 # print(sigma_this_batch[indices_correct])
                 sigma_total[index] = sigma.cpu()
 
-        sigma_total = sigma_total - sigma_total.mean() + sigma_mean()
+        trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
         cl_total /= data_size
         rl_total /= data_size
         acc = 100 * correct / data_size
 
-        return cl_total, rl_total, acc
+        return cl_total, rl_total, acc, sigma_mean
 
     else:
         for batch_idx, index in enumerate(batch_sampler):
