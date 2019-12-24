@@ -169,7 +169,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
         rl_total /= data_size
         acc = 100 * correct / data_size
 
-        return cl_total, rl_total, acc, sigma_mean
+        return cl_total, rl_total, acc
 
     else:
         for batch_idx, index in enumerate(batch_sampler):
