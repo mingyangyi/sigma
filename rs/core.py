@@ -58,14 +58,14 @@ class Smooth(object):
         c_hard = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_hard = self.sigma_net(x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
+          r_hard = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
         else:
           r_hard = self.sigma * norm.ppf(pa_hard)
       if pa_soft < 0.5:
         c_soft = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_soft = self.sigma_net(x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
+          r_soft = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
         else:
           r_soft = self.sigma * norm.ppf(pa_soft)
       return c_hard, r_hard, c_soft, r_soft
@@ -83,7 +83,7 @@ class Smooth(object):
         return Smooth.ABSTAIN, 0.0
       else:
         if self.sigma_net is not None:
-          radius = self.sigma_net(x.unsqueeze(0), mean=False) * norm.ppf(pABar)
+          radius = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pABar)
         else:
           radius = self.sigma * norm.ppf(pABar)
         return cAHat, radius
@@ -145,4 +145,4 @@ class Smooth(object):
       if sample_variance < 0:
         sample_variance = 0
       t = np.log(2 / alpha)
-      return NA / N - np.sqrt(2 * sample_variance * t / N) - 7 * t / 3 / (N - 1)
+      return NA / N - np.sqrt(2 * sample_varian * t / N) - 7 * t / 3 / (N - 1)
