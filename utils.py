@@ -135,12 +135,15 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, mean=True):
         x = self.feats(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        x = 2 * self.sigma * F.softmax(x, dim=1).max(1)[0]
-        x = x - x.mean(0) + self.sigma
+        if mean:
+            x = 2 * self.sigma * F.softmax(x, dim=1).max(1)[0]
+            x = x - x.mean(0) + self.sigma
+        else:
+            x = 2 * self.sigma * F.softmax(x, dim=1).max(1)[0]
 
         return x
 

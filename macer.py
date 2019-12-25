@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 
 def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainset,
-                batch_sampler, optimizer, device):
+                batch_sampler, optimizer, device, epoch):
     m = Normal(torch.tensor([0.0]).to(device),
                torch.tensor([1.0]).to(device))
     cl_total = 0.0
@@ -15,7 +15,13 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
     correct = 0
     (inputs_total, targets_total, sigma_total) = trainset
     sigma_mean = sigma_total.mean()
+
     if method == 'macer':
+        if epoch > 0:
+            lr_sigma = lr_sigma
+        else:
+            lr_sigma = 0.0
+
         if sigma_net is not None:
             optimizer_sigma = optim.SGD(sigma_net.parameters(), lr=lr_sigma, weight_decay=5e-4)
         else:

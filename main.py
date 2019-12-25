@@ -15,6 +15,7 @@ import random
 from utils import *
 from macer import macer_train
 from rs.certify import certify
+# import matplotlib.pyplot as plt
 
 import os
 import argparse
@@ -80,6 +81,14 @@ def main():
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
+    # checkpoint = torch.load('./results/ckpt.t7')
+    # sigma = checkpoint['sigma']
+    # a = []
+    # for i in sigma:
+    #     a.append(i.cpu().numpy())
+    #
+    # plt.hist(a, 1000)
+    # plt.show()
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
     model_config = {'input_size': 32, 'dataset': args.dataset, 'depth': args.depth}
@@ -229,14 +238,16 @@ def main():
 
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
+            power = sum(epoch >= int(i) for i in [50, 100])
+            lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
             print('create an optimizer with learning rate as:', lr)
             scheduler.step()
             model.train()
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, args.lam, args.gauss_num, args.beta,
-                                              args.gamma, args.lr_sigma, num_classes, model, trainset, batch_sampler,
-                                              optimizer, device)
+                                              args.gamma, lr_sigma, num_classes, model, trainset, batch_sampler,
+                                              optimizer, device, epoch)
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
