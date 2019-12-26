@@ -301,7 +301,7 @@ def main():
                 os.mkdir(save_path)
             torch.save(state, save_path + '/ckpt.t7')
             if epoch % 10 == 0:
-                torch.save(state, save_path + '{}.t7'.format(epoch))
+                torch.save(state, save_path + '/{}.t7'.format(epoch))
             if os.path.exists(save_path + '/train_vector'):
                 with open(save_path + '/train_vector', 'rb') as fp:
                     train_vector = pickle.load(fp)
@@ -327,4 +327,4 @@ def set_seed(seed):
 
 if __name__ == '__main__':
     set_seed(888)
-    main(
+    main()
