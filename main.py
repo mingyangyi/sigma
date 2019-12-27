@@ -267,7 +267,7 @@ def main():
                 model.eval()
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=args.sigma, beta=args.beta,
+                        sigma=trainset[2], beta=args.beta,
                         matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
@@ -312,7 +312,7 @@ def main():
     else:
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
-                sigma=args.sigma, beta=args.beta,
+                sigma=trainset[2], beta=args.beta,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
 
 

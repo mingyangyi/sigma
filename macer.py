@@ -119,7 +119,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             # Final objective function
             loss = classification_loss - lbd * robustness_loss
             loss /= batch_size
-            sigma_this_batch.detach()
+            # sigma_this_batch.detach()
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
@@ -162,8 +162,8 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 #     robustness_loss_tmp = robustness_loss_tmp * lbd / batch_size
                 #
                 # robustness_loss_tmp.backward()
-                sigma_this_batch.requires_grad_(False)
-                sigma_this_batch -= lr_sigma * sigma_this_batch.grad
+                # sigma_this_batch.requires_grad_(False)
+                sigma_this_batch.data -= lr_sigma * sigma_this_batch.grad.data
                 sigma_this_batch.grad.data.zero_()
                 sigma = torch.max(1e-8 * torch.ones_like(sigma_this_batch), sigma_this_batch.detach())
                 index = utils.gen_index(index, len(sigma_total))
