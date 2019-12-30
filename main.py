@@ -12,6 +12,7 @@ import pickle
 import torchvision.transforms as transforms
 import numpy as np
 import random
+from model import resnet110
 from utils import *
 from macer import macer_train
 # from rs.certify import certify
@@ -98,17 +99,18 @@ def main():
     # plt.hist(a, 1000)
     # plt.show()
     logging.info("creating model %s", args.model)
-    model = models.__dict__[args.model]
-    model_config = {'input_size': 32, 'dataset': args.dataset, 'depth': args.depth}
+    model = resnet110()
+    # model = models.__dict__[args.model]
+    # model_config = {'input_size': 32, 'dataset': args.dataset, 'depth': args.depth}
 
-    model = model(**model_config)
+    # model = model(**model_config)
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
-        cudnn.benchmark = True
+        # model = torch.nn.DataParallel(model)
+        # cudnn.benchmark = True
 
-    print("created model with configuration: %s", model_config)
+    # print("created model with configuration: %s", model_config)
     print("run arguments: %s", args)
     with open(save_path+'/log.txt', 'a') as f:
         f.writelines(str(args) + '\n')
