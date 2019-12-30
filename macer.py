@@ -17,7 +17,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
     (inputs_total, targets_total, sigma_total) = trainset
     sigma_mean = sigma_total.mean()
     if method == 'macer':
-        if epoch > 0:
+        if epoch >= 0:
             lr_sigma = lr_sigma
         else:
             lr_sigma = 0.0

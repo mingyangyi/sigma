@@ -62,7 +62,7 @@ class Smooth(object):
           r_hard = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
         else:
           p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * len(self.sigma))
-          r_hard = self.sigma.sort()[1][p_value] * norm.ppf(pa_hard)
+          r_hard = self.sigma.sort()[0][p_value] * norm.ppf(pa_hard)
       if pa_soft < 0.5:
         c_soft = Smooth.ABSTAIN
       else:
@@ -70,7 +70,7 @@ class Smooth(object):
           r_soft = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
         else:
           p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          r_soft = self.sigma.sort()[1][p_value] * norm.ppf(pa_soft)
+          r_soft = self.sigma.sort()[0][p_value] * norm.ppf(pa_soft)
       return c_hard, r_hard, c_soft, r_soft
     else:
       # make an initial prediction of the label
@@ -89,7 +89,7 @@ class Smooth(object):
           radius = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pABar)
         else:
           p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          radius = self.sigma.sort()[1][p_value] * norm.ppf(pABar)
+          radius = self.sigma.sort()[0][p_value] * norm.ppf(pABar)
         return cAHat, radius
 
   def predict(self, x: torch.tensor, n: int, batch_size: int) -> int:

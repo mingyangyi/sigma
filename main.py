@@ -15,7 +15,7 @@ import random
 from model import resnet110
 from utils import *
 from macer import macer_train
-# from rs.certify import certify
+from rs.certify import certify
 # import matplotlib.pyplot as plt
 
 import os
@@ -77,8 +77,8 @@ def main():
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' + \
-                str(args.lr) + '_'  + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + str(args.beta) + '_' + args.logsub
-    save_path = os.path.join(args.save_path, args.save)
+                str(args.lr) + '_' + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + str(args.beta) + '_' + args.logsub
+    save_path = os.path.join('./result_new' + args.save_path, args.save)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # with open('results/train_vector', 'rb') as fp:
@@ -107,8 +107,8 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        # model = torch.nn.DataParallel(model)
-        # cudnn.benchmark = True
+        model = torch.nn.DataParallel(model)
+        cudnn.benchmark = True
 
     # print("created model with configuration: %s", model_config)
     print("run arguments: %s", args)
