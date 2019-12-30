@@ -69,7 +69,7 @@ class Smooth(object):
         if self.sigma_net is not None:
           r_soft = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * len(self.sigma))
+          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
           r_soft = self.sigma.sort()[1][p_value] * norm.ppf(pa_soft)
       return c_hard, r_hard, c_soft, r_soft
     else:
@@ -88,7 +88,7 @@ class Smooth(object):
         if self.sigma_net is not None:
           radius = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pABar)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * len(self.sigma))
+          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
           radius = self.sigma.sort()[1][p_value] * norm.ppf(pABar)
         return cAHat, radius
 
@@ -115,7 +115,7 @@ class Smooth(object):
         if self.sigma_net is not None:
           noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch, mean=False).view(this_batch_size, 1, 1, 1)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * len(self.sigma))
+          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
           noise = torch.randn_like(batch, device=self.device) * self.sigma.sort()[0][p_value]
         predictions = self.base_classifier(batch + noise)
         predictions *= self.beta

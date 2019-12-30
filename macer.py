@@ -9,6 +9,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 batch_sampler, optimizer, device, epoch):
     m = Normal(torch.tensor([0.0]).to(device),
                torch.tensor([1.0]).to(device))
+
     cl_total = 0.0
     rl_total = 0.0
     data_size = 0
@@ -121,6 +122,10 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             loss /= batch_size
             # sigma_this_batch.detach()
             loss.backward()
+            # for p in model.parameters():
+            #     print(p.grad.data[0,0,0,0])
+            #     break
+
             optimizer.step()
             optimizer.zero_grad()
 

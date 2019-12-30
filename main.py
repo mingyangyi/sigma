@@ -14,7 +14,7 @@ import numpy as np
 import random
 from utils import *
 from macer import macer_train
-from rs.certify import certify
+# from rs.certify import certify
 # import matplotlib.pyplot as plt
 
 import os
@@ -185,7 +185,7 @@ def main():
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-        scheduler = MultiStepLR(optimizer, milestones=[80, 120], gamma=args.lr_decay_ratio)
+        scheduler = MultiStepLR(optimizer, milestones=[60, 120], gamma=args.lr_decay_ratio)
 
     if args.sigma_net == 'True':
         if device == 'cuda':
@@ -246,7 +246,7 @@ def main():
 
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
-            power = sum(epoch >= int(i) for i in [80, 120])
+            power = sum(epoch >= int(i) for i in [60, 120])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
