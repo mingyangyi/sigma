@@ -127,12 +127,9 @@ def main():
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.24703225141799082, 0.24348516474564, 0.26158783926049628)),
         ])
-
         transform_test = transforms.Compose([
             transforms.ToTensor(),
-            # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.24703225141799082, 0.24348516474564, 0.26158783926049628)),
         ])
 
     elif args.dataset == 'cifar100':
@@ -252,8 +249,8 @@ def main():
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
-            print('create an optimizer with learning rate as:', lr)
             scheduler.step()
+            print('create an optimizer with learning rate as:', lr)
             model.train()
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, args.lam, args.gauss_num, args.beta,
                                               args.gamma, lr_sigma, num_classes, model, trainset, batch_sampler,

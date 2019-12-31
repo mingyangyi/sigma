@@ -61,7 +61,7 @@ class Smooth(object):
         if self.sigma_net is not None:
           r_hard = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * len(self.sigma))
+          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
           r_hard = self.sigma.sort()[0][p_value] * norm.ppf(pa_hard)
       if pa_soft < 0.5:
         c_soft = Smooth.ABSTAIN
@@ -110,7 +110,6 @@ class Smooth(object):
       for _ in range(ceil(num / batch_size)):
         this_batch_size = min(batch_size, num)
         num -= this_batch_size
-
         batch = x.repeat((this_batch_size, 1, 1, 1))
         if self.sigma_net is not None:
           noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch, mean=False).view(this_batch_size, 1, 1, 1)
