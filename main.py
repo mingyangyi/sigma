@@ -15,7 +15,7 @@ import random
 from model import resnet110
 from utils import *
 from macer import macer_train
-# from rs.certify import certify
+from rs.certify import certify
 # import matplotlib.pyplot as plt
 
 import os
@@ -91,7 +91,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        # model = torch.nn.DataParallel(model)
+        model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     # print("created model with configuration: %s", model_config)
