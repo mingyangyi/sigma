@@ -15,7 +15,7 @@ import random
 from model import resnet110
 from utils import *
 from macer import macer_train
-from rs.certify import certify
+# from rs.certify import certify
 # import matplotlib.pyplot as plt
 
 import os
@@ -78,32 +78,16 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     args.save = args.optimizer + '_' + args.model + '_' + args.dataset + '_' + args.sigma_net + '_' + args.training_method + '_' + \
                 str(args.lr) + '_' + str(args.sigma) + '_' + str(args.lam) + '_' + str(args.gamma) + '_' + str(args.beta) + '_' + args.logsub
-    save_path = os.path.join('./result_new' + args.save_path, args.save)
+    save_path = os.path.join(args.save_path, args.save)
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    # with open('results/train_vector', 'rb') as fp:
-    #     train_vector = pickle.load(fp)
-    #
-    # a = []
-    # for i in train_vector:
-    #     a.append(i[1] - i[2])
-    #
-    # plt.plot(range(len(a)), a)
-    # plt.show()
-    # checkpoint = torch.load('./results/ckpt.t7')
-    # sigma = checkpoint['sigma']
-    # a = []
-    # for i in sigma:
-    #     a.append(i.cpu().numpy())
 
-    # plt.hist(a, 1000)
-    # plt.show()
     logging.info("creating model %s", args.model)
-    model = resnet110()
-    # model = models.__dict__[args.model]
-    # model_config = {'input_size': 32, 'dataset': args.dataset, 'depth': args.depth}
+    # model = resnet110()
+    model = models.__dict__[args.model]
+    model_config = {'input_size': 32, 'dataset': args.dataset, 'depth': args.depth}
 
-    # model = model(**model_config)
+    model = model(**model_config)
 
     if device == 'cuda':
         model = model.to(device)
@@ -174,10 +158,6 @@ def main():
     else:
         raise ValueError('No such dataset')
 
-    # data_size = 0
-    # for _, (inputs, targets) in enumerate(trainloader):
-    #     data_size += targets.size(0)
-
     sigma = args.sigma * torch.ones(50000)
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -190,7 +170,6 @@ def main():
         if device == 'cuda':
             sigma_net = sigmanet(args.sigma).to(device)
             sigma_net = torch.nn.DataParallel(sigma_net)
-            cudnn.benchmark = True
         else:
             sigma_net = sigmanet(args.sigma)
     else:
@@ -218,8 +197,10 @@ def main():
     else:
         raise ValueError('There is no such dataset')
 
-    random_sampler = torch.utils.data.RandomSampler(trainset, replacement=False)
-    batch_sampler = torch.utils.data.BatchSampler(sampler=random_sampler, batch_size=args.batch_size, drop_last=False)
+    # random_sampler = torch.utils.data.RandomSampler(trainset, replacement=False)
+    # batch_sampler = torch.utils.data.BatchSampler(sampler=random_sampler, batch_size=args.batch_size, drop_last=False)
+    batch_sampler = torch.utils.data.DataLoader(range(len(trainset)), batch_size=args.batch_size, shuffle=True, num_workers=1)
+    base_loader = torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=False, num_workers=1)
 
     if args.resume == 'True':
         # Load checkpoint.
@@ -236,15 +217,14 @@ def main():
             #     trainset = checkpoint['trainset']
             scheduler.step(start_epoch)
 
-    trainset = create_set(trainset, sigma)
-    trainset = list_to_tensor(trainset)
-
-    # trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=1)
     num_classes = 10
     train_vector = []
 
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
+            trainset = create_set(base_loader, sigma)
+            trainset = list_to_tensor(trainset)
+
             power = sum(epoch >= int(i) for i in [60, 120])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
@@ -264,6 +244,9 @@ def main():
                 print('===test(epoch={})==='.format(epoch))
                 t1 = time.time()
                 model.eval()
+                if sigma_net is not None:
+                    sigma_net.eval()
+
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
                         sigma=trainset[2], beta=args.beta,
@@ -309,6 +292,8 @@ def main():
                 pickle.dump(train_vector, fp)
 
     else:
+        if sigma_net is not None:
+            sigma_net.eval()
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
                 sigma=trainset[2], beta=args.beta,
@@ -318,6 +303,8 @@ def main():
 def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.cuda.get_rng_state_all()
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)

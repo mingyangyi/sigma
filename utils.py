@@ -4,8 +4,8 @@ import torch.nn.functional as F
 import math
 
 
-def create_set(trainset, sigma):
-    set_return = [trainset[i] + (sigma[i], ) for i in range(len(trainset))]
+def create_set(base_loader, sigma):
+    set_return = [(inputs, targets) + (sigma[i], ) for (inputs, targets) in base_loader]
     return set_return
 
 
