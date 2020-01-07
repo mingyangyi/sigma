@@ -140,17 +140,17 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
     else:
         for batch_idx, index in enumerate(batch_sampler):
-            inputs, targets, sigma = inputs_total.index_select(0, torch.tensor(index)).to(device), \
-                                     targets_total.index_select(0, torch.tensor(index)).to(device), \
-                                     sigma_total.index_select(0, torch.tensor(index)).to(device)
+            inputs, targets = inputs_total.index_select(0, torch.tensor(index)).to(device), \
+                                     targets_total.index_select(0, torch.tensor(index)).to(device)
+
             outputs = model.forward(inputs)
-            loss = nn.CrossEntropyLoss(reduction='sum')(outputs, targets)
+            loss = nn.CrossEntropyLoss()(outputs, targets)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
 
             cl_total += loss.item()
-            _, predicted= outputs.max(1)
+            _, predicted = outputs.max(1)
             data_size += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 

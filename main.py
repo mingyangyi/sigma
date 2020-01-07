@@ -91,7 +91,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     # print("created model with configuration: %s", model_config)
@@ -200,7 +200,7 @@ def main():
     # random_sampler = torch.utils.data.RandomSampler(trainset, replacement=False)
     # batch_sampler = torch.utils.data.BatchSampler(sampler=random_sampler, batch_size=args.batch_size, drop_last=False)
     batch_sampler = torch.utils.data.DataLoader(range(len(trainset)), batch_size=args.batch_size, shuffle=True, num_workers=1)
-    base_loader = torch.utils.data.DataLoader(trainset, batch_size=1, shuffle=False, num_workers=1)
+    base_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False, num_workers=1)
 
     if args.resume == 'True':
         # Load checkpoint.
@@ -222,9 +222,8 @@ def main():
 
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
-            trainset = create_set(base_loader, sigma)
-            trainset = list_to_tensor(trainset)
-
+            # trainset = create_set(base_loader, sigma)
+            trainset = list_to_tensor(base_loader, sigma, len(trainset))
             power = sum(epoch >= int(i) for i in [60, 120])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()

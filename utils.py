@@ -4,15 +4,15 @@ import torch.nn.functional as F
 import math
 
 
-def create_set(base_loader, sigma):
-    set_return = [(inputs, targets) + (sigma[i], ) for (inputs, targets) in base_loader]
-    return set_return
+# def create_set(base_loader, sigma):
+#     set_return = [(inputs, targets) + (sigma, ) for (inputs, targets) in base_loader]
+#     return set_return
 
-
-def list_to_tensor(trainset):
-    inputs = torch.stack([trainset[i][0] for i in range(len(trainset))], 0)
-    targets = torch.stack([torch.tensor(trainset[i][1]) for i in range(len(trainset))], 0)
-    sigma = torch.stack([trainset[i][2] for i in range(len(trainset))], 0)
+def list_to_tensor(base_loader, sigma, length):
+    inputs = torch.stack([inputs for inputs, targets in base_loader], 0)
+    targets = torch.stack([targets for inputs, targets in base_loader], 0)
+    inputs, targets = inputs.view(length, -1), targets.view(length, -1)
+    # sigma = torch.stack([trainset[i][2] for i in range(len(trainset))], 0)
 
     return [inputs, targets, sigma]
 
