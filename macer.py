@@ -30,12 +30,12 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
         for batch_idx, index in enumerate(batch_sampler):
         # for batch_idx, (inputs, targets) in enumerate(batch_sampler):
-            inputs, targets = inputs_total.index_select(0, torch.tensor(index)).to(device), \
-                              targets_total.index_select(0, torch.tensor(index)).to(device)
+            inputs, targets = inputs_total.index_select(0, index).to(device), \
+                              targets_total.index_select(0, index).to(device)
 
             # inputs, targets = inputs.to(device), targets.to(device)
             if sigma_net is None:
-                sigma_this_batch = sigma_total.index_select(0, torch.tensor(index)).to(device)
+                sigma_this_batch = sigma_total.index_select(0, index).to(device)
                 sigma_this_batch.requires_grad_(True)
             else:
                 sigma_this_batch = sigma_net.forward(inputs)

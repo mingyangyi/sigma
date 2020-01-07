@@ -248,7 +248,7 @@ def main():
 
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=trainset[2], beta=args.beta,
+                        sigma=trainset_tmp[2], beta=args.beta,
                         matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
@@ -273,7 +273,7 @@ def main():
             state = {
                 'model': model.state_dict(),
                 'epoch': epoch,
-                'sigma': torch.tensor([i for i in trainset[2]]),
+                'sigma': torch.tensor([i for i in trainset_tmp[2]]),
                 'sigma_net': sigma_net.state_dict() if sigma_net is not None else None,
                 # 'trainset': trainset
             }
@@ -295,7 +295,7 @@ def main():
             sigma_net.eval()
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
-                sigma=trainset[2], beta=args.beta,
+                sigma=sigma, beta=args.beta,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
 
 
