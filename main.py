@@ -223,7 +223,7 @@ def main():
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
             # trainset = create_set(base_loader, sigma)
-            trainset = list_to_tensor(base_loader, sigma, len(trainset))
+            trainset_tmp = list_to_tensor(base_loader, sigma, len(trainset))
             power = sum(epoch >= int(i) for i in [60, 120])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
@@ -232,7 +232,7 @@ def main():
             print('create an optimizer with learning rate as:', lr)
             model.train()
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, args.lam, args.gauss_num, args.beta,
-                                              args.gamma, lr_sigma, num_classes, model, trainset, batch_sampler,
+                                              args.gamma, lr_sigma, num_classes, model, trainset_tmp, batch_sampler,
                                               optimizer, device, epoch)
 
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (

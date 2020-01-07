@@ -11,7 +11,7 @@ import math
 def list_to_tensor(base_loader, sigma, length):
     inputs = torch.stack([inputs for inputs, targets in base_loader], 0)
     targets = torch.stack([targets for inputs, targets in base_loader], 0)
-    inputs, targets = inputs.view(length, -1), targets.view(length, -1)
+    inputs, targets = inputs.view(length, 3, 32, 32), targets.view(length)
     # sigma = torch.stack([trainset[i][2] for i in range(len(trainset))], 0)
 
     return [inputs, targets, sigma]

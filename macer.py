@@ -3,6 +3,7 @@ import utils
 from torch.distributions.normal import Normal
 import torch.optim as optim
 import torch.nn.functional as F
+import torch.nn as nn
 
 
 def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainset,
@@ -140,8 +141,8 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
     else:
         for batch_idx, index in enumerate(batch_sampler):
-            inputs, targets = inputs_total.index_select(0, torch.tensor(index)).to(device), \
-                                     targets_total.index_select(0, torch.tensor(index)).to(device)
+            inputs, targets = inputs_total.index_select(0, index).to(device), \
+                                     targets_total.index_select(0, index).to(device)
 
             outputs = model.forward(inputs)
             loss = nn.CrossEntropyLoss()(outputs, targets)
@@ -149,7 +150,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             optimizer.step()
             optimizer.zero_grad()
 
-            cl_total += loss.item()
+            cl_total += loss.item() * len(inputs)
             _, predicted = outputs.max(1)
             data_size += targets.size(0)
             correct += predicted.eq(targets).sum().item()
