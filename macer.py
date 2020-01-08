@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainset,
-                batch_sampler, optimizer, device, epoch):
+                batch_sampler, optimizer, device, epoch, average='False'):
     m = Normal(torch.tensor([0.0]).to(device),
                torch.tensor([1.0]).to(device))
 
@@ -132,7 +132,8 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 index = utils.gen_index(index, len(sigma_total))
                 sigma_total[index] = sigma.cpu()
 
-        trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
+        if average == 'False':
+            trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
         cl_total /= data_size
         rl_total /= data_size
         acc = 100 * correct / data_size

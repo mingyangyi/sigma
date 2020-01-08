@@ -13,6 +13,7 @@ import torchvision.transforms as transforms
 import numpy as np
 import random
 from utils import *
+from utils_imagenet import *
 from macer import macer_train
 from rs.certify import certify
 # import matplotlib.pyplot as plt
@@ -89,6 +90,11 @@ def main():
 
     model = model(**model_config)
 
+    if device == 'cuda':
+        model = model.to(device)
+        model = torch.nn.DataParallel(model)
+        cudnn.benchmark = True
+
     # print("created model with configuration: %s", model_config)
     print("run arguments: %s", args)
     with open(save_path+'/log.txt', 'a') as f:
@@ -133,8 +139,8 @@ def main():
     valid_dir = os.path.join(args.data_dir, 'validation.zip')
     print('Loading data into memory')
 
-    trainset = utils.InMemoryZipDataset(train_dir, transform_train, 32)
-    validset = utils.InMemoryZipDataset(valid_dir, transform_test, 32)
+    trainset = InMemoryZipDataset(train_dir, transform_train, 32)
+    validset = InMemoryZipDataset(valid_dir, transform_test, 32)
 
     print('Found {} in training data'.format(len(trainset)))
     print('Found {} in validation data'.format(len(validset)))
@@ -143,7 +149,7 @@ def main():
     # val_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=16)
     base_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False, num_workers=16)
 
-    sigma = args.sigma * torch.ones(len(trainset)).to(device)
+    sigma = args.sigma * torch.ones(len(trainset))
     if args.resume == 'True':
         # Load checkpoint.
         print('==> Resuming from checkpoint..')
