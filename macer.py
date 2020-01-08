@@ -132,7 +132,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 index = utils.gen_index(index, len(sigma_total))
                 sigma_total[index] = sigma.cpu()
 
-        # trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
+        trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
         cl_total /= data_size
         rl_total /= data_size
         acc = 100 * correct / data_size
