@@ -15,7 +15,7 @@ import random
 from model import resnet110
 from utils import *
 from macer import macer_train
-from rs.certify import certify
+# from rs.certify import certify
 # import matplotlib.pyplot as plt
 
 import os
@@ -67,6 +67,7 @@ parser.add_argument('--sigma', default=0.25, type=float,
 parser.add_argument('--sigma_net', default='False', type=str, help='using sigma net or not')
 parser.add_argument('--logsub', default='False', type=str, help='using log to substitute or not')
 parser.add_argument('--average', default='False', type=str, help='average sigma or not')
+parser.add_argument('--distribute', default='False', type=str, help='average sigma or not')
 parser.add_argument('--lam', default=12.0, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--gamma', default=8.0, type=float, help='Hinge factor')
@@ -92,7 +93,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     # print("created model with configuration: %s", model_config)
@@ -249,7 +250,7 @@ def main():
 
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=trainset_tmp[2], beta=args.beta,
+                        sigma=trainset_tmp[2], beta=args.beta, average=args.average,
                         matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
@@ -296,7 +297,7 @@ def main():
             sigma_net.eval()
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
-                sigma=sigma, beta=args.beta,
+                sigma=sigma, beta=args.beta, average=args.average,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
 
 

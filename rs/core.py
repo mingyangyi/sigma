@@ -33,7 +33,7 @@ class Smooth(object):
   ABSTAIN = -1
 
   def __init__(self, base_classifier: torch.nn.Module, sigma_net: torch.nn.Module, num_classes: int,
-               sigma: list, device, mode='hard', beta=1.0):
+               sigma: list, device, mode='hard', beta=1.0, distribute='False'):
     self.base_classifier = base_classifier
     self.sigma_net = sigma_net
     self.num_classes = num_classes
@@ -43,6 +43,7 @@ class Smooth(object):
     self.square_sum = None
     self.ss = 0
     self.beta = beta
+    self.distribute = distribute
 
   def certify(self, x: torch.tensor, n0: int, n: int, alpha: float, batch_size: int) -> (int, float):
     self.base_classifier.eval()
@@ -61,16 +62,23 @@ class Smooth(object):
         if self.sigma_net is not None:
           r_hard = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          r_hard = self.sigma.sort()[0][p_value] * norm.ppf(pa_hard)
+          if self.distribute == 'False':
+            r_hard = self.sigma.mean() * norm.ppf(pa_hard)
+          else:
+            p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
+            r_hard = self.sigma.sort()[0][p_value] * norm.ppf(pa_hard)
       if pa_soft < 0.5:
         c_soft = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
           r_soft = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          r_soft = self.sigma.sort()[0][p_value] * norm.ppf(pa_soft)
+          if self.distribute == 'False':
+            r_hard = self.sigma.mean() * norm.ppf(pa_soft)
+          else:
+            p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
+            r_soft = self.sigma.sort()[0][p_value] * norm.ppf(pa_soft)
+                  
       return c_hard, r_hard, c_soft, r_soft
     else:
       # make an initial prediction of the label
@@ -88,8 +96,11 @@ class Smooth(object):
         if self.sigma_net is not None:
           radius = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pABar)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          radius = self.sigma.sort()[0][p_value] * norm.ppf(pABar)
+          if self.distribute == 'False':
+            radius = self.sigma.mean() * norm.ppf(pABar)
+          else:
+            p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
+            radius = self.sigma.sort()[0][p_value] * norm.ppf(pABar)
         return cAHat, radius
 
   def predict(self, x: torch.tensor, n: int, batch_size: int) -> int:
@@ -114,8 +125,11 @@ class Smooth(object):
         if self.sigma_net is not None:
           noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch, mean=False).view(this_batch_size, 1, 1, 1)
         else:
-          p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
-          noise = torch.randn_like(batch, device=self.device) * self.sigma.sort()[0][p_value]
+          if self.distribute == 'False':
+            noise = torch.randn_like(batch, device=self.device) * self.sigma.mean()
+          else:
+            p_value = ceil(F.softmax(self.base_classifier(x=x.unsqueeze(0)), dim=1).max(1)[0] * (len(self.sigma) - 1))
+            noise = torch.randn_like(batch, device=self.device) * self.sigma.sort()[0][p_value]
         predictions = self.base_classifier(batch + noise)
         predictions *= self.beta
         if self.mode == 'hard' or self.mode == 'both':

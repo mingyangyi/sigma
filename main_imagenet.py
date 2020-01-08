@@ -67,6 +67,8 @@ parser.add_argument('--sigma', default=0.25, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--sigma_net', default='False', type=str, help='using sigma net or not')
 parser.add_argument('--logsub', default='False', type=str, help='using log to substitute or not')
+parser.add_argument('--average', default='False', type=str, help='average sigma or not')
+parser.add_argument('--distribute', default='False', type=str, help='average sigma or not')
 parser.add_argument('--lam', default=6.0, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--gamma', default=8.0, type=float, help='Hinge factor')
@@ -147,7 +149,7 @@ def main():
 
     batch_sampler = torch.utils.data.DataLoader(range(len(trainset)), batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
     # val_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=16)
-    base_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False, num_workers=16)
+    base_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False, num_workers=1)
 
     sigma = args.sigma * torch.ones(len(trainset))
     if args.resume == 'True':
@@ -179,7 +181,7 @@ def main():
             model.train()
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, lam, args.gauss_num, args.beta,
                                               args.gamma, lr_sigma, num_classes, model, trainset_tmp, batch_sampler,
-                                              optimizer, device, epoch)
+                                              optimizer, device, epoch, args.average)
             sigma = trainset_tmp[2]
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
@@ -198,7 +200,7 @@ def main():
                     batch = 10000
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=sigma, beta=args.beta, batch=batch,
+                        sigma=sigma, beta=args.beta, batch=batch, distribute=args.distribute,
                         matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
@@ -250,7 +252,7 @@ def main():
             sigma_net.eval()
         certify(model, sigma_net, device, validset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
-                sigma=sigma, beta=args.beta, batch=batch,
+                sigma=sigma, beta=args.beta, batch=batch, distribute=args.distribute,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
 
 

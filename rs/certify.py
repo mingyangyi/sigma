@@ -22,17 +22,17 @@ from rs.core import Smooth
 
 def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
             mode='hard', start_img=0, num_img=500, skip=1, sigma=0.25, N0=100, N=100000,
-            alpha=0.001, batch=10000, verbose=False,
+            alpha=0.001, batch=10000, verbose=False, distribute='False',
             grid=(0.25, 0.50, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25), beta=1.0):
   print('===certify(N={}, sigma={}, mode={})==='.format(N, sigma, mode))
 
   model.eval()
   if sigma_net is None:
     smoothed_net = Smooth(model, None, num_classes,
-                          sigma, device, mode, beta)
+                          sigma, device, mode, beta, distribute)
   else:
     smoothed_net = Smooth(model, sigma_net, num_classes,
-                          sigma, device, mode, beta)
+                          sigma, device, mode, beta, distribute)
 
   radius_hard = np.zeros((num_img,), dtype=np.float)
   radius_soft = np.zeros((num_img,), dtype=np.float)
