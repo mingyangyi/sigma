@@ -166,7 +166,10 @@ def main():
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
     else:
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-        scheduler = MultiStepLR(optimizer, milestones=[60, 120], gamma=args.lr_decay_ratio)
+        if args.epochs <= 200:
+            scheduler = MultiStepLR(optimizer, milestones=[60, 120], gamma=args.lr_decay_ratio)
+        else:
+            scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
 
     if args.sigma_net == 'True':
         if device == 'cuda':
@@ -226,7 +229,10 @@ def main():
         for epoch in range(start_epoch, args.epochs + 1):
             # trainset = create_set(base_loader, sigma)
             trainset_tmp = list_to_tensor(base_loader, sigma, len(trainset))
-            power = sum(epoch >= int(i) for i in [60, 120])
+            if args.epochs <= 200:
+                power = sum(epoch >= int(i) for i in [60, 120])
+            else:
+                power = sum(epoch >= int(i) for i in [100, 200, 300])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
@@ -240,20 +246,37 @@ def main():
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
-            if epoch % 50 == 0 and epoch >= 100:
-                # Certify test
-                print('===test(epoch={})==='.format(epoch))
-                t1 = time.time()
-                model.eval()
-                if sigma_net is not None:
-                    sigma_net.eval()
+            if args.epochs >= 200:
+                if epoch % 50 == 0 and epoch >= 300:
+                    # Certify test
+                    print('===test(epoch={})==='.format(epoch))
+                    t1 = time.time()
+                    model.eval()
+                    if sigma_net is not None:
+                        sigma_net.eval()
 
-                certify(model, sigma_net, device, testset, num_classes,
-                        mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=trainset_tmp[2], beta=args.beta, distribute=args.distribute,
-                        matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
-                t2 = time.time()
-                print('Elapsed time: {}'.format(t2 - t1))
+                    certify(model, sigma_net, device, testset, num_classes,
+                            mode='hard', start_img=500, num_img=500, skip=1,
+                            sigma=trainset_tmp[2], beta=args.beta, distribute='True',
+                            matfile=(None if save_path is None else os.path.join(save_path, 'distribute_{}.txt'.format(epoch))))
+                    t2 = time.time()
+                    print('Elapsed time: {}'.format(t2 - t1))
+
+            else:
+                if epoch % 50 == 0 and epoch >= 100:
+                    # Certify test
+                    print('===test(epoch={})==='.format(epoch))
+                    t1 = time.time()
+                    model.eval()
+                    if sigma_net is not None:
+                        sigma_net.eval()
+
+                    certify(model, sigma_net, device, testset, num_classes,
+                            mode='hard', start_img=500, num_img=500, skip=1,
+                            sigma=trainset_tmp[2], beta=args.beta, distribute='False',
+                            matfile=(None if save_path is None else os.path.join(save_path, 'non_distribute_{}.txt'.format(epoch))))
+                    t2 = time.time()
+                    print('Elapsed time: {}'.format(t2 - t1))
 
             print('\n Epoch: {0}\t'
                          'Cross Entropy Loss {c_loss:.4f} \t'
@@ -298,7 +321,7 @@ def main():
         certify(model, sigma_net, device, testset, num_classes,
                 mode='both', start_img=500, num_img=500, skip=1,
                 sigma=sigma, beta=args.beta, distribute=args.distribute,
-                matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
+                matfile=(None if save_path is None else os.path.join(save_path, 'test_{}.txt'.format(args.distribute))))
 
 
 def set_seed(seed):

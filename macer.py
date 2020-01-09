@@ -38,7 +38,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 sigma_this_batch = sigma_total.index_select(0, index).to(device)
                 sigma_this_batch.requires_grad_(True)
             else:
-                sigma_this_batch = sigma_net.forward(inputs)
+                sigma_this_batch = sigma_net.forward(inputs, average)
 
             batch_size = len(inputs)
             data_size += targets.size(0)
@@ -132,7 +132,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 index = utils.gen_index(index, len(sigma_total))
                 sigma_total[index] = sigma.cpu()
 
-        if average == 'False':
+        if average != 'False':
             trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
         cl_total /= data_size
         rl_total /= data_size

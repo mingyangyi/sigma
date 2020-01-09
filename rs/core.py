@@ -60,7 +60,7 @@ class Smooth(object):
         c_hard = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_hard = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_hard)
+          r_hard = self.sigma_net(x=x.unsqueeze(0), mean=self.distribute) * norm.ppf(pa_hard)
         else:
           if self.distribute == 'False':
             r_hard = self.sigma.mean() * norm.ppf(pa_hard)
@@ -71,7 +71,7 @@ class Smooth(object):
         c_soft = Smooth.ABSTAIN
       else:
         if self.sigma_net is not None:
-          r_soft = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pa_soft)
+          r_soft = self.sigma_net(x=x.unsqueeze(0), mean=self.distribute) * norm.ppf(pa_soft)
         else:
           if self.distribute == 'False':
             r_hard = self.sigma.mean() * norm.ppf(pa_soft)
@@ -94,7 +94,7 @@ class Smooth(object):
         return Smooth.ABSTAIN, 0.0
       else:
         if self.sigma_net is not None:
-          radius = self.sigma_net(x=x.unsqueeze(0), mean=False) * norm.ppf(pABar)
+          radius = self.sigma_net(x=x.unsqueeze(0), mean=self.distribute) * norm.ppf(pABar)
         else:
           if self.distribute == 'False':
             radius = self.sigma.mean() * norm.ppf(pABar)
@@ -123,7 +123,7 @@ class Smooth(object):
         num -= this_batch_size
         batch = x.repeat((this_batch_size, 1, 1, 1))
         if self.sigma_net is not None:
-          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch, mean=False).view(this_batch_size, 1, 1, 1)
+          noise = torch.randn_like(batch, device=self.device) * self.sigma_net(batch, mean=self.distribute).view(this_batch_size, 1, 1, 1)
         else:
           if self.distribute == 'False':
             noise = torch.randn_like(batch, device=self.device) * self.sigma.mean()

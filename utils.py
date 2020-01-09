@@ -19,7 +19,7 @@ def list_to_tensor(base_loader, sigma, length):
 
 
 def gen_index(index, length):
-    index_tmp = [0 for i in range(length)]
+    index_tmp = [0] * length
     for i in index:
         index_tmp[i] = 1
     index_tmp = torch.tensor(index_tmp, dtype=torch.uint8)
@@ -54,13 +54,17 @@ class Sigma_net(nn.Module):
         self.fc3 = nn.Linear(512, 512, bias=True)
         self.fc4 = nn.Linear(512, 1, bias=True)
 
-    def forward(self, x):
+    def forward(self, x, mean='True'):
         out = F.relu(self.conv1(x))
         out = F.relu(self.fc1(out.view(out.size()[0], -1)))
         out = F.relu(self.fc2(out))
         out = F.relu(self.fc3(out))
         out = self.fc4(out)
-        out = torch.sigmoid(out) * self.sigma * 2
+        if mean == 'True':
+            out = torch.sigmoid(out) * self.sigma * 2
+            out = out - out.mean() + self.sigma
+        else:
+            out = torch.sigmoid(out) * self.sigma * 2
 
         return out
 
