@@ -14,11 +14,17 @@ def list_to_tensor(base_loader, sigma, length):
     return [inputs, targets, sigma]
 
 
-def gen_index(index, length):
-    index_tmp = [0] * length
+def gen_index(index_tmp, index):
+    # index_tmp = [0] * length
     for i in index:
         index_tmp[i] = 1
-    index_tmp = torch.tensor(index_tmp, dtype=torch.uint8)
+
+    return index_tmp
+
+
+def recover_index(index_tmp, index):
+    for i in index:
+        index_tmp[i] = 0
 
     return index_tmp
 

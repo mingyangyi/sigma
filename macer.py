@@ -17,6 +17,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
     correct = 0
     (inputs_total, targets_total, sigma_total) = trainset
     sigma_mean = sigma_total.mean()
+    index_tmp = torch.tensor([0] * len(sigma_total), dtype=torch.uint8).to(device)
     if method == 'macer':
         if epoch >= 0:
             lr_sigma = lr_sigma
@@ -35,7 +36,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
 
             # inputs, targets = inputs.to(device), targets.to(device)
             if sigma_net is None:
-                sigma_this_batch = sigma_total.index_select(0, index).to(device)
+                sigma_this_batch = sigma_total.index_select(0, index.to(device))
                 sigma_this_batch.requires_grad_(True)
             else:
                 sigma_this_batch = sigma_net.forward(inputs, average)
@@ -129,8 +130,9 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 sigma_this_batch.data -= lr_sigma * sigma_this_batch.grad.data
                 sigma_this_batch.grad.data.zero_()
                 sigma = torch.max(1e-8 * torch.ones_like(sigma_this_batch), sigma_this_batch.detach())
-                index = utils.gen_index(index, len(sigma_total))
-                sigma_total[index] = sigma.cpu()
+                index_select = utils.gen_index(index_tmp, index)
+                sigma_total[index_select] = sigma
+                index_tmp = utils.recover_index(index_tmp, index)
 
         if average != 'False':
             trainset[2] = sigma_total - sigma_total.mean() + sigma_mean

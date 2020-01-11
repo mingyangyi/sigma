@@ -12,11 +12,9 @@ import pickle
 import torchvision.transforms as transforms
 import numpy as np
 import random
-from model import resnet110
 from utils import *
 from macer import macer_train
 from rs.certify import certify
-# import matplotlib.pyplot as plt
 
 import os
 import argparse
@@ -160,7 +158,7 @@ def main():
     else:
         raise ValueError('No such dataset')
 
-    sigma = args.sigma * torch.ones(50000)
+    sigma = args.sigma * torch.ones(50000).to(device)
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
         scheduler = MultiStepLR(optimizer, milestones=[200, 400], gamma=args.lr_decay_ratio)
@@ -215,7 +213,7 @@ def main():
             model.load_state_dict(checkpoint['model'])
             start_epoch = checkpoint['epoch'] + 1
             if checkpoint['sigma'] is not None:
-                sigma = checkpoint['sigma']
+                sigma = checkpoint['sigma'].to(device)
             if checkpoint['sigma_net'] is not None:
                 sigma_net.load_state_dict(checkpoint['sigma_net'])
             # if checkpoint['trainset'] is not None:
@@ -314,7 +312,7 @@ def main():
             state = {
                 'model': model.state_dict(),
                 'epoch': epoch,
-                'sigma': torch.tensor([i for i in trainset_tmp[2]]),
+                'sigma': sigma,
                 'sigma_net': sigma_net.state_dict() if sigma_net is not None else None,
                 # 'trainset': trainset
             }

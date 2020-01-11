@@ -344,17 +344,17 @@ class InMemoryZipDataset(data.Dataset):
             gc.collect()
         reader.close()
 
-        self.sampler = [(items) + (index,) for index, items in enumerate(self.sampler)]
+        self.samples = [(items) + (index,) for index, items in enumerate(self.samples)]
             
     def __len__(self):
         return len(self.samples)
     
     def __getitem__(self, index):
-        sample, target = self.samples[index]
+        sample, target, index_tmp = self.samples[index]
         sample = convert_to_pil(sample)
         if self.transform is not None:
             sample = self.transform(sample)
-        return sample, target
+        return sample, target, index_tmp
     
     def __repr__(self):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'

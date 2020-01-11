@@ -14,7 +14,7 @@ import numpy as np
 import random
 from utils import *
 from utils_imagenet import *
-from macer import macer_train
+from macer_imagenet import macer_train
 from rs.certify import certify
 # import matplotlib.pyplot as plt
 
