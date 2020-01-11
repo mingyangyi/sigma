@@ -343,6 +343,8 @@ class InMemoryZipDataset(data.Dataset):
             del res, threads
             gc.collect()
         reader.close()
+
+        self.sampler = [(items) + (index,) for index, items in enumerate(self.sampler)]
             
     def __len__(self):
         return len(self.samples)

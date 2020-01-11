@@ -4,15 +4,6 @@ import torch.nn.functional as F
 import math
 import torch.utils.data as data
 
-# def create_set(base_loader, sigma):
-#     set_return = [(inputs, targets) + (sigma, ) for (inputs, targets) in base_loader]
-#     return set_return
-
-
-def list_to_tensor_imagenet(trainset, sigma, batch_size, length):
-    inputs_tmp, targets_tmp =
-    for i in range(int(length / batch_size)):
-
 
 def list_to_tensor(base_loader, sigma, length):
     inputs = torch.stack([inputs for inputs, targets in base_loader], 0)

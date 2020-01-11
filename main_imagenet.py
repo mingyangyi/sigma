@@ -147,11 +147,9 @@ def main():
     print('Found {} in training data'.format(len(trainset)))
     print('Found {} in validation data'.format(len(validset)))
 
-    batch_sampler = torch.utils.data.DataLoader(range(len(trainset)), batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
-    # val_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=16)
-    base_loader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=False, num_workers=16)
+    batch_sampler = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
 
-    sigma = args.sigma * torch.ones(len(trainset))
+    sigma = args.sigma * torch.ones(len(trainset)).to(device)
     if args.resume == 'True':
         # Load checkpoint.
         print('==> Resuming from checkpoint..')
@@ -170,7 +168,7 @@ def main():
 
     if args.task == 'train':
         for epoch in range(start_epoch, args.epochs + 1):
-            trainset_tmp = list_to_tensor(base_loader, sigma, len(trainset))
+            trainset_tmp = [trainset, sigma]
             power = sum(epoch >= int(i) for i in [30, 60, 90])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
             lam = args.lam if epoch >= 90 else 0
@@ -182,7 +180,7 @@ def main():
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, lam, args.gauss_num, args.beta,
                                               args.gamma, lr_sigma, num_classes, model, trainset_tmp, batch_sampler,
                                               optimizer, device, epoch, args.average)
-            sigma = trainset_tmp[2]
+            sigma = trainset_tmp[1]
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
@@ -198,10 +196,19 @@ def main():
                     batch = 100
                 else:
                     batch = 10000
+
                 certify(model, sigma_net, device, testset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
-                        sigma=sigma, beta=args.beta, batch=batch, distribute=args.distribute,
-                        matfile=(None if save_path is None else os.path.join(save_path, '{}.txt'.format(epoch))))
+                        sigma=sigma, beta=args.beta, batch=batch, distribute='False',
+                        matfile=(None if save_path is None else os.path.join(save_path,
+                                                                             'non_distribute_{}.txt'.format(
+                                                                                 epoch))))
+
+                certify(model, sigma_net, device, testset, num_classes,
+                        mode='hard', start_img=500, num_img=500, skip=1,
+                        sigma=sigma, beta=args.beta, batch=batch, distribute='True',
+                        matfile=(None if save_path is None else os.path.join(save_path,
+                                                                             'distribute_{}.txt'.format(epoch))))
                 t2 = time.time()
                 print('Elapsed time: {}'.format(t2 - t1))
 
@@ -225,9 +232,8 @@ def main():
             state = {
                 'model': model.state_dict(),
                 'epoch': epoch,
-                'sigma': torch.tensor([i for i in trainset_tmp[2]]),
+                'sigma': sigma,
                 'sigma_net': sigma_net.state_dict() if sigma_net is not None else None,
-                # 'trainset': trainset
             }
 
             if not os.path.isdir(save_path):
@@ -250,10 +256,17 @@ def main():
 
         if sigma_net is not None:
             sigma_net.eval()
-        certify(model, sigma_net, device, validset, num_classes,
-                mode='both', start_img=500, num_img=500, skip=1,
-                sigma=sigma, beta=args.beta, batch=batch, distribute=args.distribute,
-                matfile=(None if save_path is None else os.path.join(save_path, 'test.txt')))
+        certify(model, sigma_net, device, testset, num_classes,
+                mode='hard', start_img=500, num_img=500, skip=1,
+                sigma=sigma, beta=args.beta, batch=batch, distribute='False',
+                matfile=(None if save_path is None else os.path.join(save_path,
+                                                                     'non_distribute_test.txt')))
+
+        certify(model, sigma_net, device, testset, num_classes,
+                mode='hard', start_img=500, num_img=500, skip=1,
+                sigma=sigma, beta=args.beta, batch=batch, distribute='True',
+                matfile=(None if save_path is None else os.path.join(save_path,
+                                                                     'distribute_test.txt')))
 
 
 def set_seed(seed):
