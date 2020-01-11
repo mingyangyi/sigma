@@ -257,8 +257,16 @@ def main():
 
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
+                            sigma=trainset_tmp[2], beta=args.beta, distribute='False',
+                            matfile=(None if save_path is None else os.path.join(save_path,
+                                                                                 'non_distribute_{}.txt'.format(
+                                                                                     epoch))))
+
+                    certify(model, sigma_net, device, testset, num_classes,
+                            mode='hard', start_img=500, num_img=500, skip=1,
                             sigma=trainset_tmp[2], beta=args.beta, distribute='True',
-                            matfile=(None if save_path is None else os.path.join(save_path, 'distribute_{}.txt'.format(epoch))))
+                            matfile=(None if save_path is None else os.path.join(save_path,
+                                                                                 'distribute_{}.txt'.format(epoch))))
                     t2 = time.time()
                     print('Elapsed time: {}'.format(t2 - t1))
 
@@ -274,7 +282,15 @@ def main():
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
                             sigma=trainset_tmp[2], beta=args.beta, distribute='False',
-                            matfile=(None if save_path is None else os.path.join(save_path, 'non_distribute_{}.txt'.format(epoch))))
+                            matfile=(None if save_path is None else os.path.join(save_path,
+                                                                                 'non_distribute_{}.txt'.format(
+                                                                                     epoch))))
+
+                    certify(model, sigma_net, device, testset, num_classes,
+                            mode='hard', start_img=500, num_img=500, skip=1,
+                            sigma=trainset_tmp[2], beta=args.beta, distribute='True',
+                            matfile=(None if save_path is None else os.path.join(save_path,
+                                                                                 'distribute_{}.txt'.format(epoch))))
                     t2 = time.time()
                     print('Elapsed time: {}'.format(t2 - t1))
 
@@ -327,10 +343,7 @@ def main():
 def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    torch.cuda.get_rng_state_all()
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
 

@@ -149,7 +149,7 @@ def main():
 
     batch_sampler = torch.utils.data.DataLoader(range(len(trainset)), batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=16)
     # val_loader = torch.utils.data.DataLoader(validset, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=16)
-    base_loader = torch.utils.data.DataLoader(trainset, batch_size=len(trainset), shuffle=False, num_workers=1)
+    base_loader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=False, num_workers=16)
 
     sigma = args.sigma * torch.ones(len(trainset))
     if args.resume == 'True':
