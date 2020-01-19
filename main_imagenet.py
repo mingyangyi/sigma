@@ -45,7 +45,7 @@ parser.add_argument('--dataset', default='imagenet', type=str,
                     help='dataset')
 parser.add_argument('--epochs', default=120, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--batch_size', default=128, type=int,
+parser.add_argument('--batch_size', default=256, type=int,
                     help='batch size')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--lr_decay_ratio', default=0.1, type=float,
@@ -162,7 +162,7 @@ def main():
             if checkpoint['sigma_net'] is not None:
                 sigma_net.load_state_dict(checkpoint['sigma_net'])
             scheduler.step(start_epoch)
-
+    
     num_classes = 1000
     train_vector = []
 
@@ -171,7 +171,7 @@ def main():
             trainset_tmp = [trainset, sigma]
             power = sum(epoch >= int(i) for i in [30, 60, 90])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
-            lam = args.lam if epoch >= 90 else 0
+            lam = args.lam# if epoch >= 90 else 0
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
             scheduler.step()

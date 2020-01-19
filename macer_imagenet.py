@@ -4,7 +4,7 @@ from torch.distributions.normal import Normal
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
-
+import time
 
 def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma, num_classes, model, trainset,
                 batch_sampler, optimizer, device, epoch, average='False'):
@@ -17,7 +17,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
     correct = 0
     _, sigma_total = trainset
     sigma_mean = sigma_total.mean()
-    index_tmp = torch.tensor([0] * len(sigma_total), dtype=torch.uint8).to(device)
+    index_tmp = torch.tensor([0] * len(sigma_total), dtype=torch.bool).to(device)
     if method == 'macer':
         if epoch >= 0:
             lr_sigma = lr_sigma
@@ -30,10 +30,12 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             optimizer_sigma = None
 
         for batch_idx, (inputs, targets, index) in enumerate(batch_sampler):
-            inputs, targets = inputs.to(device), targets.to(device)
+            time_1 = time.time()
+            inputs, targets, index = inputs.to(device), targets.to(device), index.to(device)
             if sigma_net is None:
-                sigma_this_batch = sigma_total.index_select(0, index.to(device))
-                sigma_this_batch.requires_grad_(True)
+                sigma_this_batch = sigma_total.index_select(0, index)
+               # sigma_this_batch.requires_grad_(True)
+               
             else:
                 sigma_this_batch = sigma_net.forward(inputs, average)
 
@@ -44,12 +46,12 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             new_shape.extend(inputs[0].shape)
             inputs = inputs.repeat((1, gauss_num, 1, 1)).view(new_shape)
             noise = torch.randn_like(inputs, device=device)
-
+            inputs.requires_grad_(True)
             for i in range(batch_size):
                 noise[i * gauss_num: (i + 1) * gauss_num] *= sigma_this_batch[i]
 
             noisy_inputs = inputs + noise
-
+           # noisy_inputs.requires_grad_(True)
             outputs = model(noisy_inputs)
             outputs = outputs.reshape((batch_size, gauss_num, num_classes))
 
@@ -105,15 +107,20 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
                 optimizer_sigma.step()
                 optimizer_sigma.zero_grad()
             else:
-                sigma_this_batch.data -= lr_sigma * sigma_this_batch.grad.data
-                sigma_this_batch.grad.data.zero_()
+                index = list(index.cpu().numpy())
+                for i in range(batch_size):
+                    sigma_grad = inputs.grad[i * gauss_num: (i + 1) * gauss_num] * noise[i * gauss_num: (i + 1) * gauss_num]
+                    sigma_grad = 4 * sigma_grad.sum()
+                    sigma_this_batch.data[i] -= lr_sigma * sigma_grad.data
+               # print(sigma_this_batch)    
                 sigma = torch.max(1e-8 * torch.ones_like(sigma_this_batch), sigma_this_batch.detach())
                 index_select = utils.gen_index(index_tmp, index)
                 sigma_total[index_select] = sigma
                 index_tmp = utils.recover_index(index_tmp, index)
-
+               # print(time.time() - time_1)
+                inputs.detach()
         if average != 'False':
-            trainset[2] = sigma_total - sigma_total.mean() + sigma_mean
+            trainset[1] = sigma_total - sigma_total.mean() + sigma_mean
         cl_total /= data_size
         rl_total /= data_size
         acc = 100 * correct / data_size
@@ -121,9 +128,9 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
         return cl_total, rl_total, acc
 
     else:
-        for batch_idx, index in enumerate(batch_sampler):
-            inputs, targets = inputs_total.index_select(0, index).to(device), \
-                                     targets_total.index_select(0, index).to(device)
+        for batch_idx, (inputs, targets, index) in enumerate(batch_sampler):
+            time_1 = time.time()
+            inputs, targets = inputs.to(device), targets.to(device)
 
             outputs = model.forward(inputs)
             loss = nn.CrossEntropyLoss()(outputs, targets)
@@ -135,7 +142,7 @@ def macer_train(method, sigma_net, logsub, lbd, gauss_num, beta, gamma, lr_sigma
             _, predicted = outputs.max(1)
             data_size += targets.size(0)
             correct += predicted.eq(targets).sum().item()
-
+            print(time.time() - time_1)
         cl_total /= data_size
         acc = 100 * correct / data_size
 

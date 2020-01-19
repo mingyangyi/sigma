@@ -17,14 +17,13 @@ def list_to_tensor(base_loader, sigma, length):
 def gen_index(index_tmp, index):
     # index_tmp = [0] * length
     for i in index:
-        index_tmp[i] = 1
-
+        index_tmp.data[i] = 1
     return index_tmp
 
 
 def recover_index(index_tmp, index):
     for i in index:
-        index_tmp[i] = 0
+        index_tmp.data[i] = 0
 
     return index_tmp
 
