@@ -171,7 +171,7 @@ def main():
             trainset_tmp = [trainset, sigma]
             power = sum(epoch >= int(i) for i in [30, 60, 90])
             lr_sigma = args.lr_sigma * pow(args.lr_decay_ratio, power)
-            lam = args.lam# if epoch >= 90 else 0
+            lam = args.lam if epoch >= 90 else 0
             strat_time = time.time()
             lr = optimizer.param_groups[0]['lr']
             scheduler.step()
@@ -184,7 +184,7 @@ def main():
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
-            if epoch % 30 == 0 and epoch >= 120:
+            if epoch % 30 == 0 and epoch >= 90:
                 # Certify test
                 print('===test(epoch={})==='.format(epoch))
                 t1 = time.time()
@@ -197,14 +197,14 @@ def main():
                 else:
                     batch = 10000
 
-                certify(model, sigma_net, device, testset, num_classes,
+                certify(model, sigma_net, device, validset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
                         sigma=sigma, beta=args.beta, batch=batch, distribute='False',
                         matfile=(None if save_path is None else os.path.join(save_path,
                                                                              'non_distribute_{}.txt'.format(
                                                                                  epoch))))
 
-                certify(model, sigma_net, device, testset, num_classes,
+                certify(model, sigma_net, device, validset, num_classes,
                         mode='hard', start_img=500, num_img=500, skip=1,
                         sigma=sigma, beta=args.beta, batch=batch, distribute='True',
                         matfile=(None if save_path is None else os.path.join(save_path,
@@ -256,13 +256,13 @@ def main():
 
         if sigma_net is not None:
             sigma_net.eval()
-        certify(model, sigma_net, device, testset, num_classes,
+        certify(model, sigma_net, device, validset, num_classes,
                 mode='hard', start_img=500, num_img=500, skip=1,
                 sigma=sigma, beta=args.beta, batch=batch, distribute='False',
                 matfile=(None if save_path is None else os.path.join(save_path,
                                                                      'non_distribute_test.txt')))
 
-        certify(model, sigma_net, device, testset, num_classes,
+        certify(model, sigma_net, device, validset, num_classes,
                 mode='hard', start_img=500, num_img=500, skip=1,
                 sigma=sigma, beta=args.beta, batch=batch, distribute='True',
                 matfile=(None if save_path is None else os.path.join(save_path,

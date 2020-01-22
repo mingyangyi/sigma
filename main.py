@@ -245,7 +245,7 @@ def main():
                 time.time() - strat_time, args.optimizer, args.model + str(args.depth)))
 
             if args.epochs >= 200:
-                if epoch % 50 == 0 and epoch >= 300:
+                if epoch % 50 == 0 and epoch >= 400:
                     # Certify test
                     print('===test(epoch={})==='.format(epoch))
                     t1 = time.time()
@@ -255,14 +255,14 @@ def main():
 
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
-                            sigma=trainset_tmp[2], beta=args.beta, distribute='False',
+                            sigma=trainset_tmp[2], sigma_base=args.sigma, certify_robustness=0.5, beta=args.beta, distribute='False',
                             matfile=(None if save_path is None else os.path.join(save_path,
                                                                                  'non_distribute_{}.txt'.format(
                                                                                      epoch))))
 
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
-                            sigma=trainset_tmp[2], beta=args.beta, distribute='True',
+                            sigma=trainset_tmp[2], sigma_base=args.sigma, certify_robustness=0.5, beta=args.beta, distribute='True',
                             matfile=(None if save_path is None else os.path.join(save_path,
                                                                                  'distribute_{}.txt'.format(epoch))))
                     t2 = time.time()
@@ -279,14 +279,14 @@ def main():
 
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
-                            sigma=trainset_tmp[2], beta=args.beta, distribute='False',
+                            sigma=trainset_tmp[2], sigma_base=args.sigma, certify_robustness=0.5, beta=args.beta, distribute='False',
                             matfile=(None if save_path is None else os.path.join(save_path,
                                                                                  'non_distribute_{}.txt'.format(
                                                                                      epoch))))
 
                     certify(model, sigma_net, device, testset, num_classes,
                             mode='hard', start_img=500, num_img=500, skip=1,
-                            sigma=trainset_tmp[2], beta=args.beta, distribute='True',
+                            sigma=trainset_tmp[2], sigma_base=args.sigma, certify_robustness=0.5, beta=args.beta, distribute='True',
                             matfile=(None if save_path is None else os.path.join(save_path,
                                                                                  'distribute_{}.txt'.format(epoch))))
                     t2 = time.time()
@@ -333,8 +333,8 @@ def main():
         if sigma_net is not None:
             sigma_net.eval()
         certify(model, sigma_net, device, testset, num_classes,
-                mode='both', start_img=500, num_img=500, skip=1,
-                sigma=sigma, beta=args.beta, distribute=args.distribute,
+                mode='hard', start_img=500, num_img=500, skip=1,
+                sigma=sigma, sigma_base=args.sigma, certify_robustness=0.5, beta=args.beta, distribute=args.distribute,
                 matfile=(None if save_path is None else os.path.join(save_path, 'test_{}.txt'.format(args.distribute))))
 
 

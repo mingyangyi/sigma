@@ -21,7 +21,7 @@ from rs.core import Smooth
 
 
 def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
-            mode='hard', start_img=0, num_img=500, skip=1, sigma=0.25, N0=100, N=100000,
+            mode='hard', start_img=0, num_img=500, skip=1, sigma=0.25, sigma_base=0.25, certify_robustness=0.5, N0=100, N=100000,
             alpha=0.001, batch=10000, verbose=False, distribute='False',
             grid=(0.25, 0.50, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25), beta=1.0):
   print('===certify(N={}, sigma={}, mode={})==='.format(N, sigma, mode))
@@ -29,10 +29,10 @@ def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
   model.eval()
   if sigma_net is None:
     smoothed_net = Smooth(model, None, num_classes,
-                          sigma, device, mode, beta, distribute)
+                          sigma, device, mode, beta, distribute, sigma_base, certify_robustness)
   else:
     smoothed_net = Smooth(model, sigma_net, num_classes,
-                          sigma, device, mode, beta, distribute)
+                          sigma, device, mode, beta, distribute, sigma_base, certify_robustness)
 
   radius_hard = np.zeros((num_img,), dtype=np.float)
   radius_soft = np.zeros((num_img,), dtype=np.float)
@@ -43,7 +43,11 @@ def certify(model, sigma_net, device, dataset, num_classes, matfile=None,
   s_soft = 0.0
 
   for i in range(num_img):
-    img, target = dataset[start_img + i * skip]
+    if len(dataset[0]) == 3:
+      img, target, _ = dataset[start_img + i * skip]
+    else:
+      img, target = dataset[start_img + i * skip]
+
     img = img.to(device)
 
     if mode == 'both':
