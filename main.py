@@ -69,6 +69,7 @@ parser.add_argument('--distribute', default='False', type=str, help='average sig
 parser.add_argument('--lam', default=12.0, type=float,
                     metavar='W', help='initial sigma for each data')
 parser.add_argument('--gamma', default=8.0, type=float, help='Hinge factor')
+parser.add_argument('--hinge', default=0.5, type=float, help='Hinge factor for macer hinge')
 parser.add_argument('--beta', default=16.0, type=float, help='Inverse temperature of softmax (also used in test)')
 
 
@@ -91,7 +92,7 @@ def main():
 
     if device == 'cuda':
         model = model.to(device)
-        model = torch.nn.DataParallel(model)
+        # model = torch.nn.DataParallel(model)
         cudnn.benchmark = True
 
     # print("created model with configuration: %s", model_config)
@@ -238,7 +239,7 @@ def main():
             print('create an optimizer with learning rate as:', lr)
             model.train()
             c_loss, r_loss, acc = macer_train(args.training_method, sigma_net, args.logsub, args.lam, args.gauss_num, args.beta,
-                                              args.gamma, lr_sigma, num_classes, model, trainset_tmp, batch_sampler,
+                                              args.gamma, args.hinge, lr_sigma, num_classes, model, trainset_tmp, batch_sampler,
                                               optimizer, device, epoch, args.average)
             sigma = trainset_tmp[2]
             print('Training time for each epoch is %g, optimizer is %s, model is %s' % (

@@ -307,7 +307,7 @@ class Smooth(object):
           c_hard_output = c_hard_base
 
         else:
-          r_hard_output = torch.max(r_hard, r_hard_base)
+          r_hard_output = torch.max(torch.tensor(r_hard), torch.tensor(r_hard_base))
           if r_hard > r_hard_base:
             c_hard_output = c_hard
           else:
