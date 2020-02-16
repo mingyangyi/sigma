@@ -99,7 +99,7 @@ class Smooth(object):
           c_hard_output = c_hard_base
 
         else:
-          r_hard_output = torch.max(r_hard, r_hard_base)
+          r_hard_output = torch.max(r_hard.cpu(), r_hard_base)
           if r_hard > r_hard_base:
             c_hard_output = c_hard
           else:
@@ -157,7 +157,7 @@ class Smooth(object):
           c_soft_output = c_soft_base
 
         else:
-          r_soft_output = torch.max(r_soft, r_soft_base)
+          r_soft_output = torch.max(r_soft.cpu(), r_soft_base)
           if r_soft > r_soft_base:
             c_soft_output = c_soft
           else:
@@ -232,7 +232,7 @@ class Smooth(object):
           c_soft_output = c_soft_base
 
         else:
-          r_soft_output = torch.max(r_soft, r_soft_base)
+          r_soft_output = torch.max(r_soft.cpu(), r_soft_base)
           if r_soft > r_soft_base:
             c_soft_output = c_soft
           else:
@@ -307,7 +307,7 @@ class Smooth(object):
           c_hard_output = c_hard_base
 
         else:
-          r_hard_output = torch.max(torch.tensor(r_hard), torch.tensor(r_hard_base))
+          r_hard_output = torch.max(torch.tensor(r_hard).cpu(), torch.tensor(r_hard_base))
           if r_hard > r_hard_base:
             c_hard_output = c_hard
           else:
